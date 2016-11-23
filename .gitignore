@@ -1,3 +1,6 @@
+bin
+.tup
+
 # Created by https://www.gitignore.io/api/c,linux,windows
 
 ### C ###

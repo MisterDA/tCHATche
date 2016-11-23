@@ -1,0 +1,19 @@
+CC += gcc
+CFLAGS += -Wall
+LDFLAGS +=
+
+!cc = |> $(CC) $(CFLAGS) -c %f -o %o -Isrc/client -Isrc/common -Isrc/server -fdiagnostics-color=always |> %B.o
+!ld = |> gcc %f -o %o $(LDFLAGS) -fdiagnostics-color=always |>
+
+: foreach src/common/*.c |> !cc |> src/common/%B.o
+: foreach src/client/*.c |> !cc |> src/client/%B.o
+: foreach src/server/*.c |> !cc |> src/server/%B.o
+
+: src/server/*.o src/common/*.o |> !ld |> bin/tchatche_server
+
+LDFLAGS = -lncursesw
+: src/client/*.o src/common/*.o |> !ld |> bin/tchatche
+
+LDFLAGS = -lcunit
+: tests/main.c |> !cc |> tests/%B.o
+: tests/*.o src/common/*.o |> !ld |> bin/tests
