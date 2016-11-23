@@ -1,48 +1,48 @@
-# tasks:
+# rules:
 #     tchatche
 #     tchatche_server
-#
 #     tests
-#     build_tests
 #     clean
 
 CC=gcc
-CFLAGS=-Wall -Isrc/client -Isrc/common -Isrc/server
+CFLAGS=-Wall -Wextra -std=c11 -Og -ggdb -Isrc/client -Isrc/server -Isrc/common
 LDFLAGS=
 
-SRC_CLIENT=src/client/client.c
-SRC_SERVER=src/server/server.c
-SRC_COMMON=src/common/packet.c
 
+SRC_CLIENT=$(wildcard src/client/*.c)
+SRC_SERVER=$(wildcard src/server/*.c)
+SRC_COMMON=$(wildcard src/common/*.c)
 
 OBJ_CLIENT=$(SRC_CLIENT:.c=.o)
 OBJ_SERVER=$(SRC_SERVER:.c=.o)
 OBJ_COMMON=$(SRC_COMMON:.c=.o)
 
+
 all: tchatche tchatche_server
 
-tchatche: $(OBJ_COMMON) $(OBJ_CLIENT)
-	mkdir -p bin
-	$(CC) -o bin/$@ $^ $(LDFLAGS)
+tchatche: bin/tchatche
 
-tchatche_server: $(OBJ_COMMON) $(OBJ_SERVER)
-	mkdir -p bin
-	$(CC) -o bin/$@ $^ $(LDFLAGS)
+tchatche_server: bin/tchatche_server
 
-clean:
-	rm -rf src/client/*.o src/common/*.o src/server/*.o tests/*.o
-	rm -rf src/client/*.h.gch src/common/*.h.gch src/server/*.h.gch tests/*.h.gch
-	rm -rf bin
+bin/tchatche: $(OBJ_COMMON) $(OBJ_CLIENT)
+	@mkdir -p bin
+	$(CC) -o bin/tchatche $^ $(LDFLAGS)
+
+bin/tchatche_server: $(OBJ_COMMON) $(OBJ_SERVER)
+	@mkdir -p bin
+	$(CC) -o bin/tchatche_server $^ $(LDFLAGS)
+
+tests: bin/tests
+	@bin/tests
+
+bin/tests: tests/main.o
+	@mkdir -p bin
+	$(CC) -o bin/tests $^ $(LDFLAGS) -lcunit
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-tests: build_tests
-	bin/tests
+clean:
+	rm -rf $(OBJ_CLIENT) $(OBJ_SERVER) $(OBJ_COMMON) tests/main.o bin
 
-build_tests: $(OBJ_COMMON) tests/main.o
-	$(CC) -o bin/tests $^ $(CFLAGS) -lcunit
-
-tests/main.o: src/common/packet.h
-
-.PHONY: clean tests build_tests
+.PHONY: clean tchatche tchatche_server tests

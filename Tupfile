@@ -1,5 +1,5 @@
 CC += gcc
-CFLAGS += -Wall
+CFLAGS=-Wall -Wextra -std=c11 -Og -ggdb -Isrc/client -Isrc/server -Isrc/common
 LDFLAGS +=
 
 !cc = |> $(CC) $(CFLAGS) -c %f -o %o -Isrc/client -Isrc/common -Isrc/server -fdiagnostics-color=always |> %B.o
@@ -11,7 +11,6 @@ LDFLAGS +=
 
 : src/server/*.o src/common/*.o |> !ld |> bin/tchatche_server
 
-LDFLAGS = -lncursesw
 : src/client/*.o src/common/*.o |> !ld |> bin/tchatche
 
 LDFLAGS = -lcunit
