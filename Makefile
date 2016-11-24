@@ -35,9 +35,11 @@ bin/tchatche_server: $(OBJ_COMMON) $(OBJ_SERVER)
 tests: bin/tests
 	@bin/tests
 
-bin/tests: tests/main.o
+bin/tests: tests/main.o $(OBJ_COMMON)
 	@mkdir -p bin
 	$(CC) -o bin/tests $^ $(LDFLAGS) -lcunit
+
+tests/main.o: src/common/*.h tests/*.c
 
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
