@@ -9,7 +9,7 @@
 
 #define MIN_NUMBER 0
 #define MAX_NUMBER 9999
-#define MAX_LONG_NUMBER (MAX_NUMBER * 1000 + MAX_NUMBER)
+#define MAX_LONG_NUMBER 99999999
 
 /* tCHATche data types
  * number:      integer encoded in decimal in 4 ASCII bytes
@@ -18,7 +18,8 @@
  * string:      string length as a number then string content except ending '\0'
  * data:        data length as a number then sequence of bytes
  *
- * Length fields include the length itself (4 bytes) and the length of the data.
+ * Message length fields include the length itself (4 bytes) and the length of
+ * the data.
  */
 
 /* Assuming the buffer contains enough bytes, extracts and converts the data. */
