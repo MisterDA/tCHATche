@@ -1,7 +1,11 @@
+#include <stdlib.h>
 #include <stdio.h>
+#include "tchatche.h"
 
 int main()
 {
-    printf("tCHATche client\n");
+    char *path = mktmpfifo_client();
+    printf("%s\n", path);
+    free(path);
     return 0;
 }
