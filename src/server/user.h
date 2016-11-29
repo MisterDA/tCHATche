@@ -1,7 +1,8 @@
 #ifndef USER_H
 #define USER_H
 
-#include <stddef.h>
+#include <sys/types.h>
+#include "arraylist.h"
 
 typedef int user_id;
 
@@ -13,6 +14,6 @@ typedef struct {
 
 user *user_from_id(arlist *list, user_id id);
 user *user_from_name(arlist *list, char *name);
-void send(user u, char *message, size_t len);
+ssize_t send_to(user *u, char *buf, size_t count);
 
 #endif

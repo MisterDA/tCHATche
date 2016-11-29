@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 user *user_from_id(arlist *list, user_id id) {
-	for (int i=0; i<arlist_size(list); i++) {
+	for (size_t i=0; i<arlist_size(list); i++) {
 		user *u = arlist_get(list,i);
 		if (u->id==id)
 			return u;
@@ -13,7 +13,7 @@ user *user_from_id(arlist *list, user_id id) {
 }
 
 user *user_from_name(arlist *list, char *name) {
-	for (int i=0; i<arlist_size(list); i++) {
+	for (size_t i=0; i<arlist_size(list); i++) {
 		user *u = arlist_get(list,i);
 		if (strcmp(u->name, name)==0)
 			return u;
@@ -21,6 +21,6 @@ user *user_from_name(arlist *list, char *name) {
 	return NULL;
 }
 
-ssize_t send(user u, char *buf, size_t count) {
+ssize_t send_to(user *u, char *buf, size_t count) {
 	return write(u->pipe, buf, count);
 }
