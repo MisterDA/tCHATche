@@ -1,15 +1,13 @@
 #include "arraylist.h"
 
-struct arlist {
-    void **elements;
-    size_t capacity, size;
-};
+#include <stdlib.h>
+#include <stdint.h>
 
 arlist *
 arlist_create(void)
 {
     arlist *l = malloc(sizeof(arlist));
-    l->elements = malloc(sizeof(void*) * MIN_ARLIST);
+    l->elements = malloc(MIN_ARLIST * sizeof(void *));
     l->capacity = MIN_ARLIST;
     l->size = 0;
     return l;
@@ -22,6 +20,7 @@ arlist_destroy(arlist *l, void (*freefn)(void *))
         for (size_t i = 0; i < l->size; ++i)
             freefn(l->elements[i]);
     free(l->elements);
+    free(l);
 }
 
 size_t
@@ -69,8 +68,7 @@ arlist_push(arlist *l, void *e)
         return false;
     if (l->size == l->capacity) {
         size_t new_capacity = l->capacity >= SIZE_MAX / 2 ? SIZE_MAX : 2 * l->capacity;
-        new_capacity *= sizeof(void *);
-        void *elements = realloc(l->elements, new_capacity);
+        void *elements = realloc(l->elements, new_capacity * sizeof(void *));
         if (elements)
             l->elements = elements;
         else
@@ -86,12 +84,11 @@ arlist_pop(arlist *l)
 {
     if (!l->size)
         return NULL;
-    void *e = l->elements[--(l->size)];
-    if (3 * l->size == l->capacity && l->capacity > MIN_ARLIST) {
+    if (3 * l->size <= l->capacity && l->capacity > MIN_ARLIST) {
         l->capacity /= 2;
-        void *elements = realloc(l->elements, l->capacity);
+        void *elements = realloc(l->elements, l->capacity * sizeof(void *));
         if (elements)
             l->elements = elements;
     }
-    return e;
+    return l->elements[--(l->size)];
 }
