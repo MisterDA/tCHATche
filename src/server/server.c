@@ -9,6 +9,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "request.h"
+
 int main(int argc, char *argv[])
 {
     char *path = mktmpfifo_server();
@@ -18,9 +20,18 @@ int main(int argc, char *argv[])
     free(path);
     
     
-    while (1) {
+    write_data(1, req_server_OKOK(42) );
+    write_data(1, req_server_BADD() );
+    write_data(1, req_server_BYEE(42) );
+    write_data(1, req_server_LIST(1,"JR") );
+    write_data(1, req_server_BCST("JR","hello",5) );
+    
+    fflush(stdout);
+    
+    
     int pipe = open(argv[1], O_RDWR);
     
+    while (1) {
     	
 		int buffer = 4;
 		char *buff = malloc((buffer+1)*sizeof *buff);
@@ -33,9 +44,9 @@ int main(int argc, char *argv[])
     	
     	printf("\x1B[35m" "[EOF]" "\x1B[0m"); fflush(stdout);
     	
+    }
     
     close(pipe);
-    }
     
     
     return 0;

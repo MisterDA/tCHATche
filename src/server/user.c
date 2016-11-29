@@ -1,7 +1,6 @@
 #include "user.h"
 
 #include <string.h>
-#include <unistd.h>
 
 user *user_from_id(arlist *list, user_id id) {
 	for (size_t i=0; i<arlist_size(list); i++) {
@@ -21,6 +20,6 @@ user *user_from_name(arlist *list, char *name) {
 	return NULL;
 }
 
-ssize_t send_to(user *u, char *buf, size_t count) {
-	return write(u->pipe, buf, count);
+ssize_t send_to(user *u, data d) {
+	return write_data(u->pipe, d);
 }
