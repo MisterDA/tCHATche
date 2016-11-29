@@ -21,6 +21,7 @@ static char *mktmpfifo(char *path)
         if ((ret = mkfifo(path, 0666))) {
             if (errno != EEXIST)
                 error_exit(NULL);
+        }
         umask(omode);
         ++i;
     } while (ret == -1 && i < 10);
