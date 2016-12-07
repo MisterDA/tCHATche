@@ -11,8 +11,9 @@ LDFLAGS +=
 
 : src/server/*.o src/common/*.o |> !ld |> bin/tchatche_server
 
+LDFLAGS =
 : src/client/*.o src/common/*.o |> !ld |> bin/tchatche
 
-LDFLAGS = -lcunit
+LDFLAGS = -lbcunit
 : tests/main.c |> !cc |> tests/%B.o
 : tests/*.o src/common/*.o |> !ld |> bin/tests
