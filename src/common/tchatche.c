@@ -1,5 +1,7 @@
 #include "tchatche.h"
 
+FILE *out;
+
 /* To create a temporary named pipe, we have to create a temporary file with
  * mkstemp, close and remove it, and use mkfifo on the generated name.
  * mkfifo will fail if the file has been recreated. In this case, we try up to
@@ -18,10 +20,9 @@ static char *mktmpfifo(char *path)
             error_exit("close");
         if (unlink(path))
             error_exit("unlink");
-        if ((ret = mkfifo(path, 0666))) {
+        if ((ret = mkfifo(path, 0666)))
             if (errno != EEXIST)
                 error_exit(NULL);
-        }
         umask(omode);
         ++i;
     } while (ret == -1 && i < 10);

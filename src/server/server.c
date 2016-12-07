@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <locale.h>
 #include "tchatche.h"
 
 #include <sys/types.h>
@@ -13,6 +14,7 @@
 
 int main(int argc, char *argv[])
 {
+    setlocale(LC_ALL, "");
     char *path = mktmpfifo_server();
     fprintf(stderr,"%s\n",path);
     

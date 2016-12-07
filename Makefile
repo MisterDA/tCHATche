@@ -7,7 +7,7 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -std=c11 -Og -ggdb -Isrc/client -Isrc/server -Isrc/common
 LDFLAGS=
-LDFLAGS_CLIENT=$(LDFLAGS)
+LDFLAGS_CLIENT=$(LDFLAGS) -lform -lncurses
 LDFLAGS_TESTS=$(LDFLAGS) -lbcunit
 
 

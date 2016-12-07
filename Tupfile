@@ -11,7 +11,7 @@ LDFLAGS +=
 
 : src/server/*.o src/common/*.o |> !ld |> bin/tchatche_server
 
-LDFLAGS =
+LDFLAGS = -lform -lncurses
 : src/client/*.o src/common/*.o |> !ld |> bin/tchatche
 
 LDFLAGS = -lbcunit

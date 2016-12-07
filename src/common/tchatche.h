@@ -17,6 +17,8 @@
 
 #define error_exit(s) do { perror(s); exit(EXIT_FAILURE); } while(0)
 
+extern FILE *out;
+
 /* Create a temporary fifo. Returns its path (must be freed). */
 char *mktmpfifo_client(void);
 char *mktmpfifo_server(void);
