@@ -8,9 +8,9 @@
 typedef int user_id;
 
 typedef struct {
-	user_id id;
-	char *name;
-	int pipe;
+    user_id id;
+    char *name;
+    int pipe;
 } user;
 
 user *user_from_id(arlist *list, user_id id);

@@ -84,5 +84,5 @@ void tui_print_info(tui *ui, int ch) {
     werase(ui->info);
     waddstr(ui->info, "tCHATche");
     mvwprintw(ui->info, 0, 40, "%04o - %s        ", ch, keyname(ch));
-    mvwaddstr(ui->info, 0, 67, "F1");
+    mvwaddstr(ui->info, 0, 61, keyname(TUI_QUIT));
 }

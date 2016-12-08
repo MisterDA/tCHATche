@@ -7,8 +7,8 @@
 #include <string.h>
 
 typedef struct {
-	char *ata;
-	size_t length;
+    char *ata;
+    size_t length;
 } data;
 char * malloc_data(data *d, size_t length);
 void empty_data(data *d);

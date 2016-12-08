@@ -49,6 +49,5 @@ int main(int argc, char *argv[]) {
 
     tui_end(ui);
     tui_end_curses();
-    fclose(out);
     return EXIT_SUCCESS;
 }
