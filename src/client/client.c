@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <locale.h>
 #include <ncurses.h>
+#include <ctype.h>
+#include <getopt.h>
 #include "tchatche.h"
 #include "tui.h"
 
@@ -130,19 +132,87 @@ static tui_msg messages[] = {
     {1000013920, "jch", "Sed lobortis lorem nec erat gravida, eget consectetur velit viverra."},
 };
 
+static int usage(void) {
+    fputs("Usage: tchatche [server_pipe]\n", stderr);
+    return EXIT_FAILURE;
+}
 
 int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "");
+    int server_pipe, client_pipe;
+    char *server_path, *client_path;
+
+    /* Options handler */
+    {
+        opterr = 0;
+        int hflag = 0, vflag = 0, c;
+        while ((c = getopt(argc, argv, "hv")) != -1) {
+            switch (c) {
+            case 'h': hflag = 1; break;
+            case 'v': vflag = 1; break;
+            case '?':
+                if (isprint(optopt))
+                    fprintf(stderr, "Unknown option '-%c'.\n", optopt);
+                else
+                    fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
+                return usage();
+            default:
+                return usage();
+            }
+        }
+
+        if (vflag) {
+            puts("tchatche dev version\n"
+                 "MIT License - "
+                 "Copyright (c) 2016 Antonin Décimo, Jean-Raphaël Gaglione");
+            return EXIT_SUCCESS;
+        } else if (hflag) {
+            puts("Usage: tchatche [server_pipe]\n"
+                 "\t-h\thelp\n"
+                 "\t-v\tversion");
+            return EXIT_SUCCESS;
+        }
+
+        if (optind == argc)
+            server_path = "/tmp/tchatche/server";
+        else if (optind == argc - 1)
+            server_path = argv[optind];
+        else
+            return usage();
+    }
+
+    /* Open pipes */
+    if ((server_pipe = open(server_path, O_WRONLY)) == -1)
+        error_exit(server_path);
+    client_path = mktmpfifo_client();
+    if ((client_pipe = open(client_path, O_RDONLY | O_NONBLOCK)) == -1) {
+        perror(client_path);
+        unlink(client_path);
+        free(client_path);
+        close(server_pipe);
+        return EXIT_FAILURE;
+    }
+
+    /* Init curses */
     tui_init_curses();
     tui *ui = tui_init();
-
     tui_print_info(ui, 0);
     tui_refresh(ui);
 
+    /* Event loop */
     size_t current_msg = 0;
-
-    int ch = 0;
+    char buffer[9999] = {0};
+    int ch, r;
     while ((ch = wgetch(ui->input)) != TUI_QUIT) {
+
+        /* Messages handler */
+        if ((r = read(client_pipe, buffer, sizeof(buffer) - 1))) {
+            buffer[r] = '\0';
+            tui_add_txt(ui, buffer);
+            tui_refresh(ui);
+        }
+
+        /* Input handler */
         if (ch == ERR) continue;
         tui_print_info(ui, ch);
         tui_refresh(ui);
@@ -187,6 +257,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    close(server_pipe);
+    close(client_pipe);
+    unlink(client_path);
+    free(client_path);
     tui_end(ui);
     tui_end_curses();
     return EXIT_SUCCESS;

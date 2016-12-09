@@ -117,3 +117,15 @@ void tui_add_msg(tui *ui, tui_msg *msg) {
     if (getcury(ui->chat) == getmaxy(ui->chat) - 1 && getmaxy(ui->chat) > getmaxy(stdscr) - 2)
         ui->chat_row += lines;
 }
+
+void tui_add_txt(tui *ui, char *txt) {
+    bool newline;
+    int lines = tui_count_lines(ui, txt, strlen(txt), &newline);
+
+    wresize(ui->chat, getmaxy(ui->chat) + lines, getmaxx(ui->chat));
+    waddstr(ui->chat, txt);
+    if (newline)
+        waddch(ui->chat, '\n');
+    if (getcury(ui->chat) == getmaxy(ui->chat) - 1 && getmaxy(ui->chat) > getmaxy(stdscr) - 2)
+        ui->chat_row += lines;
+}
