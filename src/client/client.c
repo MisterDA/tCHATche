@@ -132,9 +132,58 @@ static tui_msg messages[] = {
     {1000013920, "jch", "Sed lobortis lorem nec erat gravida, eget consectetur velit viverra."},
 };
 
-static int usage(void) {
+static char *trim(char *str)
+{
+    while (isspace((unsigned char)*str)) ++str;
+    if (*str == '\0')
+        return str;
+    char *end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end)) --end;
+    *(end+1) = 0;
+    return str;
+}
+
+static void usage(void) {
     fputs("Usage: tchatche [server_pipe]\n", stderr);
-    return EXIT_FAILURE;
+    exit(EXIT_FAILURE);
+}
+
+static void options_handler(int argc, char *argv[], char **server_path) {
+    opterr = 0;
+    int hflag = 0, vflag = 0, c;
+    while ((c = getopt(argc, argv, "hv")) != -1) {
+        switch (c) {
+        case 'h': hflag = 1; break;
+        case 'v': vflag = 1; break;
+        case '?':
+            if (isprint(optopt))
+                fprintf(stderr, "Unknown option '-%c'.\n", optopt);
+            else
+                fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
+            usage();
+        default:
+            usage();
+        }
+    }
+
+    if (vflag) {
+        puts("tchatche dev version\n"
+             "MIT License - "
+             "Copyright (c) 2016 Antonin Décimo, Jean-Raphaël Gaglione");
+        exit(EXIT_SUCCESS);
+    } else if (hflag) {
+        puts("Usage: tchatche [server_pipe]\n"
+             "\t-h\thelp\n"
+             "\t-v\tversion");
+        exit(EXIT_SUCCESS);
+    }
+
+    if (optind == argc)
+        *server_path = "/tmp/tchatche/server";
+    else if (optind == argc - 1)
+        *server_path = argv[optind];
+    else
+        usage();
 }
 
 int main(int argc, char *argv[]) {
@@ -142,44 +191,7 @@ int main(int argc, char *argv[]) {
     int server_pipe, client_pipe;
     char *server_path, *client_path;
 
-    /* Options handler */
-    {
-        opterr = 0;
-        int hflag = 0, vflag = 0, c;
-        while ((c = getopt(argc, argv, "hv")) != -1) {
-            switch (c) {
-            case 'h': hflag = 1; break;
-            case 'v': vflag = 1; break;
-            case '?':
-                if (isprint(optopt))
-                    fprintf(stderr, "Unknown option '-%c'.\n", optopt);
-                else
-                    fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
-                return usage();
-            default:
-                return usage();
-            }
-        }
-
-        if (vflag) {
-            puts("tchatche dev version\n"
-                 "MIT License - "
-                 "Copyright (c) 2016 Antonin Décimo, Jean-Raphaël Gaglione");
-            return EXIT_SUCCESS;
-        } else if (hflag) {
-            puts("Usage: tchatche [server_pipe]\n"
-                 "\t-h\thelp\n"
-                 "\t-v\tversion");
-            return EXIT_SUCCESS;
-        }
-
-        if (optind == argc)
-            server_path = "/tmp/tchatche/server";
-        else if (optind == argc - 1)
-            server_path = argv[optind];
-        else
-            return usage();
-    }
+    options_handler(argc, argv, &server_path);
 
     /* Open pipes */
     if ((server_pipe = open(server_path, O_WRONLY)) == -1)
@@ -246,6 +258,19 @@ int main(int argc, char *argv[]) {
                 form_driver(ui->form, REQ_DEL_CHAR);
             }
             break;
+        case '\r':
+        case '\n': {
+            form_driver(ui->form, REQ_VALIDATION);
+            char *buf = trim(field_buffer(ui->fields[0], 0));
+            const size_t len = strlen(buf);
+            if (len > 0) {
+                write(server_pipe, buf, len + 1);
+                tui_add_txt(ui, buf);
+                form_driver(ui->form, REQ_CLR_FIELD);
+                tui_refresh(ui);
+            }
+            break;
+        }
         case KEY_F(2):
             tui_add_msg(ui, messages + (current_msg++) % array_size(messages));
             tui_print_info(ui, ch);

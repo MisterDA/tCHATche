@@ -22,6 +22,23 @@ int main(int argc, char *argv[])
 
     int server_pipe = open(server_path, O_RDWR);
 
+    int r;
+    bool quit = false;
+    const int buf_len = 127;
+    char *buf = malloc(buf_len + 1);
+    while (!quit) {
+        while ((r = read(server_pipe, buf, buf_len)) > 0) {
+            buf[r] = '\0';
+            puts(buf);
+            fflush(stdout);
+            if (strcmp(buf, "quit") == 0) {
+                quit = true;
+                break;
+            }
+        }
+    }
+
+    /*
     write_data(1, req_server_OKOK(42) );
     write_data(1, req_server_BADD() );
     write_data(1, req_server_BYEE(42) );
@@ -42,6 +59,7 @@ int main(int argc, char *argv[])
         printf("\x1B[35m" "[EOF]" "\x1B[0m");
         fflush(stdout);
     }
+    */
 
     close(server_pipe);
     unlink(server_path);
