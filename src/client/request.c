@@ -5,19 +5,11 @@
 static char buffer[MAX_REQUEST_LENGTH+1];
 
 data
-req_server_OKOK(uint32_t id)
+req_server_HELO(char *pseudo, char *pipe)
 {
 	INIT(d);
-	DO write_type(&d, "OKOK");
-	DO write_num(&d, id);
-	END(d);
-}
-
-data
-req_server_BADD()
-{
-	INIT(d);
-	DO write_type(&d, "BADD");
+	DO write_str(&d, pseudo);
+	DO write_str(&d, pipe);
 	END(d);
 }
 
@@ -31,55 +23,66 @@ req_server_BYEE(uint32_t id)
 }
 
 data
-req_server_BCST(char *pseudo, char *msg, size_t msglen)
+req_server_BCST(uint32_t id, char *msg, size_t msglen)
 {
 	INIT(d);
 	DO write_type(&d, "BCST");
-	DO write_str(&d, pseudo);
+	DO write_num(&d, id);
 	DO write_mem(&d, msg, msglen);
 	END(d);
 }
 
 data
-req_server_PRVT(char *pseudo, char *msg, size_t msglen)
+req_server_PRVT(uint32_t id, char *pseudo, char *msg, size_t msglen)
 {
 	INIT(d);
 	DO write_type(&d, "PRVT");
+	DO write_num(&d, id);
 	DO write_str(&d, pseudo);
 	DO write_mem(&d, msg, msglen);
 	END(d);
 }
 
 data
-req_server_LIST(uint32_t n, char *pseudo)
+req_server_LIST(uint32_t id)
 {
 	INIT(d);
 	DO write_type(&d, "LIST");
-	DO write_num(&d, n);
-	DO write_str(&d, pseudo);
+	DO write_num(&d, id);
 	END(d);
 }
 
 data
-req_server_SHUT(char *pseudo)
+req_server_SHUT(uint32_t id, char *password)
 {
 	INIT(d);
 	DO write_type(&d, "SHUT");
-	DO write_str(&d, pseudo);
+	DO write_num(&d, id);
+	if (password) // extention du protocole : mot de passe admin
+		DO write_str(&d, password);
 	END(d);
 }
 
 data
-req_server_FILE_announce(uint32_t idtransfer, uint32_t len, char *filename, char *pseudo)
+req_server_DEBG(char *password)
+{
+	INIT(d);
+	DO write_type(&d, "DEBG");
+	if (password) // extention du protocole : mot de passe admin
+		DO write_str(&d, password);
+	END(d);
+}
+
+data
+req_server_FILE_announce(uint32_t id, char *pseudo, uint32_t len, char *filename)
 {
 	INIT(d);
 	DO write_type(&d, "FILE");
 	DO write_num(&d, 0);
-	DO write_num(&d, idtransfer);
+	DO write_num(&d, id);
+	DO write_str(&d, pseudo);
 	DO write_longnum(&d, len);
 	DO write_str(&d, filename);
-	if (pseudo) // extention du protocole : pseudo de l'expediteur
-		DO write_str(&d, pseudo);
 	END(d);
 }
 

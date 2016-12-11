@@ -1,8 +1,8 @@
 #ifndef REQUEST_SERVER_H
 #define REQUEST_SERVER_H
 
-#include "packet.h"
-//#include "user.h" //attention (cf user_id)
+#include <stdint.h>
+#include "data.h"
 
 data req_server_OKOK(uint32_t id);
 data req_server_BADD();

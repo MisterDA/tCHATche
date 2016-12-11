@@ -46,7 +46,10 @@ tests/main.o: src/common/*.h tests/*.c
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-src/server/request.o: src/server/request.h src/common/packet.h
+PACKET_EDIT=src/common/packet_edition.h src/common/packet.h src/common/data.h
+src/server/request.o: src/server/request.h $(PACKET_EDIT)
+src/client/request.o: src/client/request.h $(PACKET_EDIT)
+
 src/common/packet.o: src/common/packet.h src/common/data.h
 src/common/data.o: src/common/data.h
 
