@@ -6,161 +6,164 @@
 #include <string.h>
 
 
-char *
-malloc_data(data *d, size_t length)
-{
-    d->ata = malloc(length * sizeof *d->ata);
-    if (d->ata) d->length = length;
-    else d->length = 0;
-    return d->ata;
-}
-
-void
-empty_data(data *d)
-{
-    free(d->ata);
-    d->ata = NULL;
-    d->length = 0;
-}
-
-ssize_t write_data(int fd, const data d)
-{
-    return write(fd, d.ata, d.length);
-}
-
-
-
 uint32_t
-read_num(const char **data)
+read_num(data *d)
 {
-    uint32_t n = 0;
-    for (int i = SIZEOF_NUM; i > 0; --i) {
-        if (**data < '0' || **data > '9') {
-            *data += i;
-            return MAX_NUM+1;
-        }
-        n *= 10;
-        n += *(*data)++ - '0';
-    }
-    return n;
+	if (!d) goto err0;
+	char *mem = d->ata;
+	if (!shift_data(d, SIZEOF_NUM)) goto err0;
+	shift_data(d,SIZEOF_NUM);
+	uint32_t n = 0;
+	for (int i=SIZEOF_NUM; i>0; i--) {
+		if (*mem < '0' || *mem > '9') goto err0;
+		n *= 10;
+		n += *mem++ - '0';
+	}
+	return n;
+	err0: return MAX_NUM+1;
 }
 
 uint32_t
-read_longnum(const char **data)
+read_longnum(data *d)
 {
-    uint32_t n = 0;
-    for (int i = SIZEOF_LONGNUM; i > 0; --i) {
-        if (**data < '0' || **data > '9') {
-            *data += i;
-            return MAX_LONGNUM+1;
-        }
-        n *= 10;
-        n += *(*data)++ - '0';
-    }
-    return n;
+	if (!d) goto err0;
+	char *mem = d->ata;
+	if (!shift_data(d, SIZEOF_LONGNUM)) goto err0;
+	uint32_t n = 0;
+	for (int i=SIZEOF_LONGNUM; i>0; i--) {
+		if (*mem < '0' || *mem > '9') goto err0;
+		n *= 10;
+		n += *mem++ - '0';
+	}
+	return n;
+	err0: return MAX_NUM+1;
 }
 
-char *
-read_str(const char **data, char *str, uint32_t len)
+data * /* aquire a pointer to the original data */
+read_mem(data *d, data *mem)
 {
-    uint32_t l = read_num(data);
-    if (l > MAX_NUM)
-        return NULL;
-    if (!str) {
-        if (!len)
-            len = l;
-        else if (l>=len)
-            return NULL;
-        str = malloc(len);
-    } else if (l>=len)
-        return NULL;
-    strncpy(str, *data, l);;
-    return str;
+	uint32_t l = read_num(d);
+	if (l>MAX_NUM) goto err0;
+	static data md;
+	if (!mem) mem = &md;
+	*mem = *d;
+	if (!shift_data(d, l)) goto err0;
+	mem->length = l;
+	return mem;
+	err0: return NULL;
 }
 
-char *
-read_string(const char **data, char *str, uint32_t len)
+data * /* copy data into dest (malloc if NULL) */
+read_data(data *d, data *dest)
 {
-    uint32_t l = read_num(data);
-    if (l > MAX_NUM)
-        return NULL;
-    if (!str) {
-        if (!len)
-            len = l+1;
-        else if (l>=len)
-            return NULL;
-        str = malloc(len);
-    } else if (l>=len)
-        return NULL;
-    strncpy(str, *data, l);
-    str[l] = '\0';
-    return str;
+	uint32_t l = read_num(d);
+	if (l>MAX_NUM) goto err0;
+	if (dest) {
+		if (!datancpy(dest, d, l)) goto err1;
+		dest->length = l;
+	} else {
+		static data md;
+		dest = &md;
+		if (!malloc_datancpy(dest, d, l)) goto err1;
+	}
+	shift_data(d, l);
+	return dest;
+	err1: shift_data(d, l);
+	err0: return NULL;
+}
+
+char * /* copy string (malloc if NULL) and return NULL if cannot put a final '\0' */
+read_str(data *d, char *str, uint32_t len)
+{
+	data mem;
+	if (!read_mem(d, &mem)) goto err0;
+	return datatostr(&mem, str, len);
+    err0: return NULL;
 }
 
 
 char *
-write_num(char **data, uint32_t number)
+write_num(data *d, uint32_t number)
 {
-    if (number > MAX_NUM)
-        return NULL;
-    char *str;
-    if (!data) {
-        str = malloc(SIZEOF_NUM+1);
-        str[SIZEOF_NUM] = '\0';
-    } else {
-        str = *data;
-        *data += SIZEOF_NUM;
-       }
+	if (!d) goto err0;
+	if (number > MAX_NUM) goto err0;
+	char *dest;
+    if (d) {
+    	dest = d->ata;
+    	if (!shift_data(d, SIZEOF_NUM)) goto err0;
+    } else { /* en fait non, trop dangereux (le code derange pas) */
+        dest = malloc(SIZEOF_NUM+1);
+        dest[SIZEOF_NUM] = '\0';
+   	}
     for (int i = SIZEOF_NUM-1; i >= 0; --i) {
-        str[i] = '0'+(number%10);
-        number /= 10;
+    	dest[i] = '0'+(number%10);
+    	number /= 10;
     }
-    return str;
+    return dest;
+    err0: return NULL;
 }
 
 char *
-write_longnum(char **data, uint32_t number)
+write_longnum(data *d, uint32_t number)
 {
-    if (number > MAX_LONGNUM)
-        return NULL;
-    char *str;
-    if (!data) {
-        str = malloc(SIZEOF_LONGNUM+1);
-        str[SIZEOF_LONGNUM] = '\0';
+	if (!d) goto err0;
+	if (number > MAX_LONGNUM) goto err0;
+	char *dest;
+    if (d) {
+    	dest = d->ata;
+    	if (!shift_data(d, SIZEOF_LONGNUM)) goto err0;
     } else {
-        str = *data;
-        *data += SIZEOF_LONGNUM;
-       }
+        dest = malloc(SIZEOF_LONGNUM+1);
+        dest[SIZEOF_LONGNUM] = '\0';
+   	}
     for (int i = SIZEOF_LONGNUM-1; i >= 0; --i) {
-        str[i] = '0'+(number%10);
-        number /= 10;
+    	dest[i] = '0'+(number%10);
+    	number /= 10;
     }
-    return str;
+    return dest;
+    err0: return NULL;
 }
 
 char *
-write_type(char **data, type t)
+write_type(data *d, type t)
 {
-    if (!data) return NULL;
-    char *s = *data;
-    for (int i=0; i<SIZEOF_TYPE; i++)
-        *(*data)++ = t[i];
-    return s;
+	if (!d) goto err0;
+	char *dest = d->ata;
+	if (!shift_data(d, SIZEOF_TYPE)) goto err0;
+	for (int i=0; i<SIZEOF_TYPE; i++)
+		dest[i] = t[i];
+	return dest;
+	err0: return NULL;
 }
 
 char *
-write_str(char **data, char *str, size_t len)
+write_mem(data *d, char *mem, size_t len)
 {
-    if (!data) return NULL;
-    char *s = write_num(data, len);
-    if (!s) return NULL;
-    strncpy(*data, str, len);
-    *data += len;
-    return s;
+	if (!mem) goto err0;
+	data src = mem2data(NULL, mem, len);
+	return write_data(d, &src);
+	err0: return NULL;
 }
 
 char *
-write_string(char **data, char *str)
-{
-    return write_str(data, str, strlen(str));
+write_data(data *d, data *src) {
+	if (!d) goto err0;
+	if (!src) goto err0;
+	char *dest = write_num(d, src->length);
+	if (!dest) goto err0;
+	if (!datacpy(d, src)) goto err1;
+	if (!shift_data(d, src->length)) goto err0;
+	return dest;
+	err1: shift_data(d, src->length);
+	err0: return NULL;
 }
+
+char *
+write_str(data *d, char *str)
+{
+	if (!str) goto err0;
+	data src = str2data(NULL, str);
+	return write_data(d, &src);
+	err0: return NULL;
+}
+

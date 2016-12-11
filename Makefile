@@ -47,7 +47,8 @@ tests/main.o: src/common/*.h tests/*.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 src/server/request.o: src/server/request.h src/common/packet.h
-src/common/packet.o: src/common/packet.h
+src/common/packet.o: src/common/packet.h src/common/data.h
+src/common/data.o: src/common/data.h
 
 clean:
 	rm -rf $(OBJ_CLIENT) $(OBJ_SERVER) $(OBJ_COMMON) tests/main.o bin

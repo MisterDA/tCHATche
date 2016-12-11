@@ -21,5 +21,5 @@ user *user_from_name(arlist *list, char *name) {
 }
 
 ssize_t send_to(user *u, data d) {
-    return write_data(u->pipe, d);
+    return writedata(u->pipe, d);
 }
