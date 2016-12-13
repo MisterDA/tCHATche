@@ -143,14 +143,9 @@ static char *trim(char *str)
     return str;
 }
 
-static void usage(void) {
-    fputs("Usage: tchatche [server_pipe]\n", stderr);
-    exit(EXIT_FAILURE);
-}
-
 static void options_handler(int argc, char *argv[], char **server_path) {
     opterr = 0;
-    int hflag = 0, vflag = 0, c;
+    int hflag = 0, vflag = 0, status, c;
     while ((c = getopt(argc, argv, "hv")) != -1) {
         switch (c) {
         case 'h': hflag = 1; break;
@@ -160,9 +155,9 @@ static void options_handler(int argc, char *argv[], char **server_path) {
                 fprintf(stderr, "Unknown option '-%c'.\n", optopt);
             else
                 fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
-            usage();
         default:
-            usage();
+            status = EXIT_FAILURE;
+            goto usage;
         }
     }
 
@@ -172,18 +167,25 @@ static void options_handler(int argc, char *argv[], char **server_path) {
              "Copyright (c) 2016 Antonin Décimo, Jean-Raphaël Gaglione");
         exit(EXIT_SUCCESS);
     } else if (hflag) {
-        puts("Usage: tchatche [server_pipe]\n"
-             "\t-h\thelp\n"
-             "\t-v\tversion");
-        exit(EXIT_SUCCESS);
+        status = EXIT_SUCCESS;
+        goto usage;
     }
 
-    if (optind == argc)
+    if (optind == argc) {
         *server_path = "/tmp/tchatche/server";
-    else if (optind == argc - 1)
+    } else if (optind == argc - 1) {
         *server_path = argv[optind];
-    else
-        usage();
+    } else {
+        status = EXIT_FAILURE;
+        goto usage;
+    }
+
+    return;
+    usage:
+    puts("Usage: tchatche [server_pipe]\n"
+         "\t-h\thelp\n"
+         "\t-v\tversion");
+    exit(status);
 }
 
 int main(int argc, char *argv[]) {
