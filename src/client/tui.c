@@ -10,14 +10,21 @@ void tui_init_curses(void) {
     nonl();
 
     start_color();
-    init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    init_pair(2, COLOR_WHITE, COLOR_RED);
-    init_pair(3, COLOR_WHITE, COLOR_GREEN);
-    init_pair(4, COLOR_WHITE, COLOR_YELLOW);
-    init_pair(5, COLOR_WHITE, COLOR_BLUE);
-    init_pair(6, COLOR_WHITE, COLOR_MAGENTA);
-    init_pair(7, COLOR_WHITE, COLOR_CYAN);
-    init_pair(8, COLOR_WHITE, COLOR_WHITE);
+    use_default_colors();
+
+    /* Default (white) foreground */
+    init_pair(1, -1, -1);
+    init_pair(2, -1, COLOR_BLACK);
+    init_pair(3, -1, COLOR_RED);
+    init_pair(4, -1, COLOR_GREEN);
+    init_pair(5, -1, COLOR_YELLOW);
+    init_pair(6, -1, COLOR_BLUE);
+    init_pair(7, -1, COLOR_MAGENTA);
+    init_pair(8, -1, COLOR_CYAN);
+    init_pair(9, -1, COLOR_WHITE);
+
+    /* Text in chat */
+    init_pair(10, COLOR_BLACK, COLOR_GREEN);
 }
 
 void tui_end_curses(void) {
@@ -37,7 +44,7 @@ tui *tui_init(void) {
     ui->input = newwin(1, main_cols, rows - 1, 0);
     ui->users = newwin(rows, user_cols, 0, main_cols);
 
-    ui->fields[0] = new_field(1, main_cols, 0, 0, 0, 0);
+    ui->fields[0] = new_field(1, main_cols - 2, 0, 0, 0, 0);
     ui->fields[1] = NULL;
     field_opts_off(ui->fields[0], O_AUTOSKIP);
     field_opts_off(ui->fields[0], O_STATIC);
@@ -45,7 +52,8 @@ tui *tui_init(void) {
     ui->form = new_form(ui->fields);
 
     set_form_win(ui->form, ui->input);
-    set_form_sub(ui->form, derwin(ui->input, 1, main_cols, 0, 0));
+    set_form_sub(ui->form, derwin(ui->input, 1, main_cols - 2, 0, 2));
+    mvwaddstr(ui->input, 0, 0, "> ");
 
     ui->chat_row = 0;
     meta(ui->input, true);
@@ -56,10 +64,12 @@ tui *tui_init(void) {
     post_form(ui->form);
     wnoutrefresh(ui->input);
 
-    wbkgd(ui->info,  COLOR_PAIR(2));
-    wbkgd(ui->chat,  COLOR_PAIR(3));
-    wbkgd(ui->input, COLOR_PAIR(4));
-    wbkgd(ui->users, COLOR_PAIR(5));
+    wbkgd(ui->info,  COLOR_PAIR(3));
+    wbkgd(ui->chat,  COLOR_PAIR(4));
+    wbkgd(ui->input, COLOR_PAIR(2));
+    set_field_back(ui->fields[0], COLOR_PAIR(2));
+    wbkgd(ui->users, COLOR_PAIR(6));
+    wbkgd(stdscr, COLOR_PAIR(1));
 
     return ui;
 }
@@ -123,7 +133,9 @@ void tui_add_txt(tui *ui, char *txt) {
     int lines = tui_count_lines(ui, txt, strlen(txt), &newline);
 
     wresize(ui->chat, getmaxy(ui->chat) + lines, getmaxx(ui->chat));
+    wattron(ui->chat, COLOR_PAIR(10));
     waddstr(ui->chat, txt);
+    wattroff(ui->chat, COLOR_PAIR(10));
     if (newline)
         waddch(ui->chat, '\n');
     if (getcury(ui->chat) == getmaxy(ui->chat) - 1 && getmaxy(ui->chat) > getmaxy(stdscr) - 2)
