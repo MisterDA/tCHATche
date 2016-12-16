@@ -11,6 +11,7 @@
 #include <getopt.h>
 #include "tchatche.h"
 #include "tui.h"
+#include "request.h"
 
 static tui_msg messages[] = {
     {1000000000, "jby", "Lorem ipsum dolor sit amet, consectetur adipiscing elit."},
@@ -266,7 +267,10 @@ int main(int argc, char *argv[]) {
             char *buf = trim(field_buffer(ui->fields[0], 0));
             const size_t len = strlen(buf);
             if (len > 0) {
-                write(server_pipe, buf, len + 1);
+            	if (strcmp(buf,"quit")==0)
+            		writedata(server_pipe, req_client_SHUT(42,NULL));
+            	else
+                	writedata(server_pipe, req_client_BCST(42,buf,len));
                 tui_add_txt(ui, buf);
                 form_driver(ui->form, REQ_CLR_FIELD);
                 tui_refresh(ui);

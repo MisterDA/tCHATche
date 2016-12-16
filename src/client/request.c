@@ -5,7 +5,7 @@
 static char buffer[MAX_REQUEST_LENGTH+1];
 
 data
-req_server_HELO(char *pseudo, char *pipe)
+req_client_HELO(char *pseudo, char *pipe)
 {
 	INIT(d);
 	DO write_str(&d, pseudo);
@@ -14,7 +14,7 @@ req_server_HELO(char *pseudo, char *pipe)
 }
 
 data
-req_server_BYEE(uint32_t id)
+req_client_BYEE(uint32_t id)
 {
 	INIT(d);
 	DO write_type(&d, "BYEE");
@@ -23,7 +23,7 @@ req_server_BYEE(uint32_t id)
 }
 
 data
-req_server_BCST(uint32_t id, char *msg, size_t msglen)
+req_client_BCST(uint32_t id, char *msg, size_t msglen)
 {
 	INIT(d);
 	DO write_type(&d, "BCST");
@@ -33,7 +33,7 @@ req_server_BCST(uint32_t id, char *msg, size_t msglen)
 }
 
 data
-req_server_PRVT(uint32_t id, char *pseudo, char *msg, size_t msglen)
+req_client_PRVT(uint32_t id, char *pseudo, char *msg, size_t msglen)
 {
 	INIT(d);
 	DO write_type(&d, "PRVT");
@@ -44,7 +44,7 @@ req_server_PRVT(uint32_t id, char *pseudo, char *msg, size_t msglen)
 }
 
 data
-req_server_LIST(uint32_t id)
+req_client_LIST(uint32_t id)
 {
 	INIT(d);
 	DO write_type(&d, "LIST");
@@ -53,7 +53,7 @@ req_server_LIST(uint32_t id)
 }
 
 data
-req_server_SHUT(uint32_t id, char *password)
+req_client_SHUT(uint32_t id, char *password)
 {
 	INIT(d);
 	DO write_type(&d, "SHUT");
@@ -64,7 +64,7 @@ req_server_SHUT(uint32_t id, char *password)
 }
 
 data
-req_server_DEBG(char *password)
+req_client_DEBG(char *password)
 {
 	INIT(d);
 	DO write_type(&d, "DEBG");
@@ -74,7 +74,7 @@ req_server_DEBG(char *password)
 }
 
 data
-req_server_FILE_announce(uint32_t id, char *pseudo, uint32_t len, char *filename)
+req_client_FILE_announce(uint32_t id, char *pseudo, uint32_t len, char *filename)
 {
 	INIT(d);
 	DO write_type(&d, "FILE");
@@ -87,7 +87,7 @@ req_server_FILE_announce(uint32_t id, char *pseudo, uint32_t len, char *filename
 }
 
 data
-req_server_FILE_transfer(uint32_t serie, uint32_t idtransfer, data buf)
+req_client_FILE_transfer(uint32_t serie, uint32_t idtransfer, data buf)
 {
 	INIT(d);
 	DO write_type(&d, "FILE");

@@ -81,6 +81,16 @@ read_str(data *d, char *str, uint32_t len)
     err0: return NULL;
 }
 
+char * /* aquire a pointer to the original data */
+read_type(data *d)
+{
+	static char *mem;
+	mem = d->ata;
+	if (!shift_data(d, SIZEOF_TYPE)) goto err0;
+	return mem;
+	err0: return NULL;
+}
+
 
 char *
 write_num(data *d, uint32_t number)

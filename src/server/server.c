@@ -94,6 +94,10 @@ int main(int argc, char *argv[])
 				quit = true;
 				break;
 			}
+			if (r>=8 && strncmp(buf+4,"SHUT",4)==0) {
+				quit = true;
+				break;
+			}
 		}
 	}
 

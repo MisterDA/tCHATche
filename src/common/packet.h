@@ -44,6 +44,7 @@ uint32_t read_longnum (data *d);
 data *   read_mem     (data *d, data *mem);
 data *   read_data    (data *d, data *dest);
 char *   read_str     (data *d, char *str, uint32_t len);
+char *   read_type    (data *d);
 
 char * write_num     (data *d, uint32_t number);
 char * write_longnum (data *d, uint32_t number);
