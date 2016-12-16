@@ -5,7 +5,7 @@
 #include "packet.h"
 #include "arraylist.h"
 
-typedef int user_id;
+typedef uint32_t user_id;
 
 typedef struct {
     user_id id;
@@ -16,5 +16,6 @@ typedef struct {
 user *user_from_id(arlist *list, user_id id);
 user *user_from_name(arlist *list, char *name);
 ssize_t send_to(user *u, data data);
+void broadcast(arlist *list, data data);
 
 #endif

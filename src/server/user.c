@@ -23,3 +23,8 @@ user *user_from_name(arlist *list, char *name) {
 ssize_t send_to(user *u, data d) {
     return writedata(u->pipe, d);
 }
+
+void broadcast(arlist *list, data d) {
+    for (size_t i=0; i<arlist_size(list); i++)
+        send_to(arlist_get(list,i), d);
+}
