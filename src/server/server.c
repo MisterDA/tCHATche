@@ -15,6 +15,7 @@
 #include <getopt.h>
 
 #include "request.h"
+#include "packet_reception.h"
 
 static char *jr_pipe;
 static bool jr_mode = false, daemonize = false;
@@ -81,6 +82,7 @@ int main(int argc, char *argv[])
 
 	int server_pipe = open(server_path, O_RDWR);
 
+	/* // CLASSIC
 	int r;
 	bool quit = false;
 	const int buf_len = 127;
@@ -99,7 +101,12 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+	} /*/ // SWITCH
+	while (true) {
+		if (read_packet(server_pipe,false)<0)
+			break;
 	}
+	//*/
 
 	close(server_pipe);
 	unlink(server_path);

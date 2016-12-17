@@ -6,10 +6,13 @@
 //#define TYPE(t) (*(uint32_t *)(t))
 //#define SETTYPE(var) var = TYPE(#var)
 #define TYPE(c1,c2,c3,c4) \
-	((uint32_t)c1<<030) | \
-	((uint32_t)c2<<020) | \
-	((uint32_t)c3<<010) | \
-	((uint32_t)c4<<000)
+	((uint32_t)c1<<000) | \
+	((uint32_t)c2<<010) | \
+	((uint32_t)c3<<020) | \
+	((uint32_t)c4<<030)
+
+#define ERR_UNKNOWN -1
+#define ERR_INVALID -2
 
 int process_packet(data packet);
 

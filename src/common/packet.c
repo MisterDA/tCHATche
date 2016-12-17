@@ -12,7 +12,6 @@ read_num(data *d)
 	if (!d) goto err0;
 	char *mem = d->ata;
 	if (!shift_data(d, SIZEOF_NUM)) goto err0;
-	shift_data(d,SIZEOF_NUM);
 	uint32_t n = 0;
 	for (int i=SIZEOF_NUM; i>0; i--) {
 		if (*mem < '0' || *mem > '9') goto err0;

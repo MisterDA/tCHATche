@@ -1,6 +1,8 @@
 #include "packet_reception.h"
 
 #include <unistd.h>
+#include <stdio.h> //DEV
+#include "packet.h" //DEV
 
 static char buffer[MAX_REQUEST_LENGTH];
 static uint32_t c = 0;
@@ -11,7 +13,6 @@ read_packet(int fd, bool nb)
 {
 	int r;
 	data buf;
-	
 	if (c<4) {
 		while (c<4) {
 			r = read(fd, buffer+c, 1);
@@ -33,6 +34,7 @@ read_packet(int fd, bool nb)
 	while (c<l) {
 		r = read(fd, buffer+c, l-c);
 		if (r<0) goto err0;
+		c += r;
 		if (c<l && nb) goto nb;
 	}
 	
