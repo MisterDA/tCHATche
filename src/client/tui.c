@@ -77,7 +77,7 @@ tui *tui_init(void) {
 void tui_refresh(tui *ui) {
     wnoutrefresh(stdscr);
     wnoutrefresh(ui->info);
-    pnoutrefresh(ui->chat, ui->chat_row, 0, 1, 0, getmaxy(stdscr) - 2, getmaxx(stdscr) - 10);
+    pnoutrefresh(ui->chat, ui->chat_row, 0, 1, 0, LINES - 2, COLS - 10);
     wnoutrefresh(ui->users);
     wnoutrefresh(ui->input);
     doupdate();
@@ -117,20 +117,22 @@ static int tui_count_lines(tui *ui, char *s, int len, bool *b) {
 void tui_add_msg(tui *ui, tui_msg *msg) {
     bool newline;
     char time_buf[6];
-    int lines = tui_count_lines(ui, msg->txt, 5 + 4 + strlen(msg->sender), &newline);
+    int lines = tui_count_lines(ui, msg->txt, 5 + 4 + strlen(msg->sender),
+                                &newline);
 
     wresize(ui->chat, getmaxy(ui->chat) + lines, getmaxx(ui->chat));
     strftime(time_buf, 6, "%H:%M", localtime(&msg->timestamp));
     wprintw(ui->chat, "%s <%s> %s", time_buf, msg->sender, msg->txt);
     if (newline)
         waddch(ui->chat, '\n');
-    if (getcury(ui->chat) == getmaxy(ui->chat) - 1 && getmaxy(ui->chat) > getmaxy(stdscr) - 2)
+    if (getcury(ui->chat) == getmaxy(ui->chat) - 1 &&
+        getmaxy(ui->chat) > LINES - 2)
         ui->chat_row += lines;
 }
 
 void tui_add_txt(tui *ui, char *txt) {
     bool newline;
-    int lines = tui_count_lines(ui, txt, strlen(txt), &newline);
+    int lines = tui_count_lines(ui, txt, 0, &newline);
 
     wresize(ui->chat, getmaxy(ui->chat) + lines, getmaxx(ui->chat));
     wattron(ui->chat, COLOR_PAIR(10));
@@ -138,6 +140,24 @@ void tui_add_txt(tui *ui, char *txt) {
     wattroff(ui->chat, COLOR_PAIR(10));
     if (newline)
         waddch(ui->chat, '\n');
-    if (getcury(ui->chat) == getmaxy(ui->chat) - 1 && getmaxy(ui->chat) > getmaxy(stdscr) - 2)
+    if (getcury(ui->chat) == getmaxy(ui->chat) - 1 &&
+        getmaxy(ui->chat) > LINES - 2)
         ui->chat_row += lines;
+}
+
+void tui_print_txt(tui *ui, const char *fmt, ...) {
+    va_list varglist;
+    va_start(varglist, fmt);
+    tui_vprint_txt(ui, fmt, varglist);
+    va_end(varglist);
+}
+
+void tui_vprint_txt(tui *ui, const char *fmt, va_list varglist) {
+    wattron(ui->chat, COLOR_PAIR(10));
+    vwprintw(ui->chat, fmt, varglist);
+    wattroff(ui->chat, COLOR_PAIR(10));
+}
+
+void tui_clear_field(tui *ui) {
+    form_driver(ui->form, REQ_CLR_FIELD);
 }

@@ -4,6 +4,7 @@
 #include <ncurses.h>
 #include <form.h>
 #include <time.h>
+#include <stdarg.h>
 
 #define TUI_QUIT KEY_F(1)
 
@@ -34,5 +35,9 @@ void tui_refresh(tui *);
 void tui_print_info(tui *, int);
 void tui_add_msg(tui *, tui_msg*);
 void tui_add_txt(tui *, char *);
+void tui_print_txt(tui *, const char *, ...);
+void tui_vprint_txt(tui *, const char *, va_list);
+
+void tui_clear_field(tui *);
 
 #endif
