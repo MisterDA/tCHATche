@@ -82,11 +82,10 @@ void tui_print_info(tui *ui, int ch) {
     const char *fmt = "%04o - %s        ";
     mvwprintw(ui->info, 0, getmaxx(ui->info) / 2 - sizeof("xxxx -") / 2,
              fmt, ch, keyname(ch));
-    mvwaddstr(ui->info, 0, getmaxx(ui->info) - strlen(keyname(TUI_QUIT)) - 1,
-              keyname(TUI_QUIT));
+    mvwaddstr(ui->info, 0, getmaxx(ui->info) - sizeof("Ctrl-D"), "Ctrl-D");
 }
 
-static int tui_count_lines(tui *ui, char *s, int len, bool *b) {
+static int tui_count_lines(tui *ui, const char *s, int len, bool *b) {
     int lines = 0, line_len = len;
     for (int i = 0; s[i]; ++i) {
         ++line_len;
@@ -115,7 +114,7 @@ void tui_add_msg(tui *ui, tui_msg *msg) {
         ui->chat_row += lines;
 }
 
-void tui_add_txt(tui *ui, char *txt) {
+void tui_add_txt(tui *ui, const char *txt) {
     bool newline;
     int lines = tui_count_lines(ui, txt, 0, &newline);
 
