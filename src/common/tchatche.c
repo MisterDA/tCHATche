@@ -1,6 +1,13 @@
+#define _GNU_SOURCE
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <stdarg.h>
 #include "tchatche.h"
-
-FILE *out;
 
 /* To create a temporary named pipe, we have to create a temporary file with
  * mkstemp, close and remove it, and use mkfifo on the generated name.
@@ -43,4 +50,36 @@ char *mktmpfifo_server(void)
     char *p = malloc(len);
     memcpy(p, "/tmp/tchatche/server-XXXXXX", len);
     return mktmpfifo(p);
+}
+
+
+static FILE *log_file = NULL;
+
+void logs_start(char *path) {
+    if (log_file) {
+        fputs("Logging had already started", stderr);
+        exit(EXIT_FAILURE);
+    } else if ((log_file = fopen(path, "a")) == NULL) {
+        error_exit(path);
+    }
+    fputs("\n\n", log_file);
+    fflush(log_file);
+}
+
+void logs(const char *fmt, ...) {
+    if (!log_file) {
+        fputs("Logging had not started", stderr);
+        exit(EXIT_FAILURE);
+    }
+    va_list varglist;
+    va_start(varglist, fmt);
+    vfprintf(log_file, fmt, varglist);
+    va_end(varglist);
+    fflush(log_file);
+}
+
+void logs_end(void) {
+    if (log_file)
+        fclose(log_file);
+    log_file = NULL;
 }
