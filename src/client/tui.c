@@ -11,20 +11,7 @@ void tui_init_curses(void) {
 
     start_color();
     use_default_colors();
-
-    /* Default (white) foreground */
-    init_pair(1, -1, -1);
-    init_pair(2, -1, COLOR_BLACK);
-    init_pair(3, -1, COLOR_RED);
-    init_pair(4, -1, COLOR_GREEN);
-    init_pair(5, -1, COLOR_YELLOW);
-    init_pair(6, -1, COLOR_BLUE);
-    init_pair(7, -1, COLOR_MAGENTA);
-    init_pair(8, -1, COLOR_CYAN);
-    init_pair(9, -1, COLOR_WHITE);
-
-    /* Text in chat */
-    init_pair(10, COLOR_BLACK, COLOR_GREEN);
+    init_pair(1, -1, COLOR_RED); /* ui->info bkgd */
 }
 
 void tui_end_curses(void) {
@@ -64,12 +51,7 @@ tui *tui_init(void) {
     post_form(ui->form);
     wnoutrefresh(ui->input);
 
-    wbkgd(ui->info,  COLOR_PAIR(3));
-    wbkgd(ui->chat,  COLOR_PAIR(4));
-    wbkgd(ui->input, COLOR_PAIR(2));
-    set_field_back(ui->fields[0], COLOR_PAIR(2));
-    wbkgd(ui->users, COLOR_PAIR(6));
-    wbkgd(stdscr, COLOR_PAIR(1));
+    wbkgd(ui->info, COLOR_PAIR(1));
 
     return ui;
 }
@@ -97,8 +79,11 @@ void tui_end(tui *ui) {
 void tui_print_info(tui *ui, int ch) {
     werase(ui->info);
     waddstr(ui->info, "tCHATche");
-    mvwprintw(ui->info, 0, 40, "%04o - %s        ", ch, keyname(ch));
-    mvwaddstr(ui->info, 0, 61, keyname(TUI_QUIT));
+    const char *fmt = "%04o - %s        ";
+    mvwprintw(ui->info, 0, getmaxx(ui->info) / 2 - sizeof("xxxx -") / 2,
+             fmt, ch, keyname(ch));
+    mvwaddstr(ui->info, 0, getmaxx(ui->info) - strlen(keyname(TUI_QUIT)) - 1,
+              keyname(TUI_QUIT));
 }
 
 static int tui_count_lines(tui *ui, char *s, int len, bool *b) {
@@ -135,9 +120,9 @@ void tui_add_txt(tui *ui, char *txt) {
     int lines = tui_count_lines(ui, txt, 0, &newline);
 
     wresize(ui->chat, getmaxy(ui->chat) + lines, getmaxx(ui->chat));
-    wattron(ui->chat, COLOR_PAIR(10));
+    wattron(ui->chat, A_DIM);
     waddstr(ui->chat, txt);
-    wattroff(ui->chat, COLOR_PAIR(10));
+    wattroff(ui->chat, A_DIM);
     if (newline)
         waddch(ui->chat, '\n');
     if (getcury(ui->chat) == getmaxy(ui->chat) - 1 &&
@@ -153,9 +138,9 @@ void tui_print_txt(tui *ui, const char *fmt, ...) {
 }
 
 void tui_vprint_txt(tui *ui, const char *fmt, va_list varglist) {
-    wattron(ui->chat, COLOR_PAIR(10));
+    wattron(ui->chat, A_DIM);
     vwprintw(ui->chat, fmt, varglist);
-    wattroff(ui->chat, COLOR_PAIR(10));
+    wattroff(ui->chat, A_DIM);
 }
 
 void tui_clear_field(tui *ui) {
