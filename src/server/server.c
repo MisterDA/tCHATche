@@ -20,7 +20,9 @@
 static char *jr_pipe;
 static bool jr_mode = false, daemonize = false;
 
-static void options_handler(int argc, char *argv[]) {
+static void
+options_handler(int argc, char *argv[])
+{
 	opterr = 0;
 	int hflag = 0, vflag = 0, status, c;
 	while ((c = getopt(argc, argv, "dhvj:")) != -1) {
@@ -67,7 +69,8 @@ static void options_handler(int argc, char *argv[]) {
 	exit(status);
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
 	options_handler(argc, argv);

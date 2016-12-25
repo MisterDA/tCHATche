@@ -11,7 +11,9 @@
 #define SHUT TYPE('S','H','U','T')
 #define FILE TYPE('F','I','L','E')
 
-int process_packet(data packet) {
+int
+process_packet(data packet)
+{
 	char *t = read_type(&packet);
 	if (!t) return -1;
 	switch (*(uint32_t *)t) {

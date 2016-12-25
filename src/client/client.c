@@ -18,7 +18,9 @@
 
 /* Client init functions */
 
-client *client_init() {
+client *
+client_init(void)
+{
     client *cl = malloc(sizeof(client));
     cl->server_path = NULL;
     cl->client_path = NULL;
@@ -29,7 +31,9 @@ client *client_init() {
     return cl;
 }
 
-void client_end(client *cl) {
+void
+client_end(client *cl)
+{
     close(cl->server_pipe);
     close(cl->client_pipe);
     unlink(cl->client_path);
@@ -38,14 +42,18 @@ void client_end(client *cl) {
     free(cl);
 }
 
-bool open_server_pipe(client *cl) {
+bool
+open_server_pipe(client *cl)
+{
     bool success = (cl->server_pipe = open(cl->server_path, O_WRONLY)) != -1;
     if (!success)
         perror(cl->server_path);
     return success;
 }
 
-bool open_client_pipe(client *cl) {
+bool
+open_client_pipe(client *cl)
+{
     cl->client_path = mktmpfifo_client();
     if ((cl->client_pipe = open(cl->client_path, O_RDONLY | O_NONBLOCK)) == -1) {
         perror(cl->client_path);
@@ -57,14 +65,18 @@ bool open_client_pipe(client *cl) {
     return true;
 }
 
-void client_init_tui(client *cl) {
+void
+client_init_tui(client *cl)
+{
     tui_init_curses();
     cl->ui = tui_init();
     tui_print_info(cl->ui, 0);
     tui_refresh(cl->ui);
 }
 
-void client_end_tui(client *cl) {
+void
+client_end_tui(client *cl)
+{
     tui_end(cl->ui);
     tui_end_curses();
 }
@@ -72,14 +84,18 @@ void client_end_tui(client *cl) {
 
 /* Input handling functions */
 
-cmd_tok *command_tok(char *buf) {
+cmd_tok *
+command_tok(char *buf)
+{
     for (size_t i = 0; i < array_size(cmd_toks); ++i)
         if (strcmp(cmd_toks[i].txt, buf) == 0)
             return &cmd_toks[i];
     return NULL; /* CMD_UNKNOWN */
 }
 
-void exec_command(client *cl, char *buf, size_t len) {
+void
+exec_command(client *cl, char *buf, size_t len)
+{
     cmd_tok cmd;
     { /* extract command */
         char *cmd_txt_end = strchrnul(buf, ' ');
@@ -154,7 +170,8 @@ void input_handler(client *cl, char *buf, size_t len) {
     }
 }
 
-static char *trim(char *str)
+static char *
+trim(char *str)
 {
     while (isspace((unsigned char)*str)) ++str;
     if (*str == '\0')
@@ -168,7 +185,9 @@ static char *trim(char *str)
 
 /* Main functions */
 
-static void options_handler(int argc, char *argv[], client *cl) {
+static void
+options_handler(int argc, char *argv[], client *cl)
+{
     opterr = 0;
     int hflag = 0, vflag = 0, status, c;
     while ((c = getopt(argc, argv, "hv")) != -1) {
@@ -214,7 +233,9 @@ static void options_handler(int argc, char *argv[], client *cl) {
 }
 
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char *argv[])
+{
     setlocale(LC_ALL, "");
 
     logs_start("/dev/pts/2");

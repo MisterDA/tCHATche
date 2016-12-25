@@ -14,6 +14,6 @@ LDFLAGS +=
 LDFLAGS = -lform -lncurses
 : src/client/*.o src/common/*.o |> !ld |> bin/tchatche
 
-LDFLAGS = -lbcunit
-: tests/main.c |> !cc |> tests/%B.o
-: tests/*.o src/common/*.o |> !ld |> bin/tests
+# LDFLAGS = -lbcunit
+# : tests/main.c |> !cc |> tests/%B.o
+# : tests/*.o src/common/*.o |> !ld |> bin/tests

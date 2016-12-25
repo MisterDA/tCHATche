@@ -18,7 +18,8 @@ static int received_BYEE(uint32_t id);
 static int received_BCST(uint32_t id, char *msg, size_t msglen);
 static int received_SHUT(uint32_t id, char *password);
 
-int process_packet(data d)
+int
+process_packet(data d)
 {
 	shift_data(&d, SIZEOF_NUM);
 	char *t = read_type(&d);
