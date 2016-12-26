@@ -27,38 +27,35 @@ tchatche: bin/tchatche
 tchatche_server: bin/tchatche_server
 
 bin/tchatche: $(OBJ_COMMON) $(OBJ_CLIENT)
-	@echo "===== TCHATCHE ====="
 	@mkdir -p bin
 	$(CC) -o bin/tchatche $^ $(LDFLAGS_CLIENT)
 
 bin/tchatche_server: $(OBJ_COMMON) $(OBJ_SERVER)
-	@echo "===== TCHATCHE_SERVER ====="
 	@mkdir -p bin
 	$(CC) -o bin/tchatche_server $^ $(LDFLAGS)
 
 tests: bin/tests
-	@bin/tests
+	bin/tests
 
 bin/tests: tests/main.o $(OBJ_COMMON)
 	@mkdir -p bin
 	$(CC) -o bin/tests $^ $(LDFLAGS_TESTS)
 
-tests/main.o: src/common/*.h tests/*.c
+#%.o: %.c
+#	$(CC) -o $@ -c $< $(CFLAGS)
 
-%.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+%.d: %.c
+	@set -e; rm -f $@; \
+	$(CC) -MM $(CFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
 
-PACKET_EDIT=src/common/packet_edition.h src/common/packet.h src/common/data.h
-PACKET_RECEPT=src/common/packet_reception.h src/common/packet.h src/common/data.h
-src/server/request.o: src/server/request.h $(PACKET_EDIT)
-src/client/request.o: src/client/request.h $(PACKET_EDIT)
-src/server/recept.o: $(PACKET_RECEPT)
-src/client/recept.o: $(PACKET_RECEPT)
-
-src/common/packet.o: src/common/packet.h src/common/data.h
-src/common/data.o: src/common/data.h
+include $(SRC_CLIENT:.c=.d)
+include $(SRC_SERVER:.c=.d)
+include $(SRC_COMMON:.c=.d)
 
 clean:
-	rm -rf $(OBJ_CLIENT) $(OBJ_SERVER) $(OBJ_COMMON) tests/main.o bin
+	find src -type f ! -name "*.c" ! -name "*.h" -delete
+	rm -rf tests/main.o bin
 
 .PHONY: clean tchatche tchatche_server tests
