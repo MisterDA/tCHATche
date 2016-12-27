@@ -22,7 +22,7 @@ tui_end_curses(void)
     endwin();
 }
 
-tui
+tui *
 tui_init(void)
 {
     int rows, cols;

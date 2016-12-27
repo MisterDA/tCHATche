@@ -8,6 +8,7 @@ data
 req_client_HELO(char *pseudo, char *pipe)
 {
 	INIT(d);
+	DO write_type(&d, "HELO");
 	DO write_str(&d, pseudo);
 	DO write_str(&d, pipe);
 	END(d);
@@ -97,4 +98,3 @@ req_client_FILE_transfer(uint32_t serie, uint32_t idtransfer, data buf)
 	DO write_data(&d, &buf);
 	END(d);
 }
-
