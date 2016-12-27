@@ -14,8 +14,10 @@
 char *mktmpfifo_client(void);
 char *mktmpfifo_server(void);
 
-void logs_start(char *);
-void logs(const char *, ...);
+
+#define LOG_FILE "/dev/pts/2"
+void logs_start(char *path, const char *motd);
+void logs(const char *fmt, ...);
 void logs_end(void);
 
 #endif

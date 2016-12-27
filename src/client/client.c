@@ -15,6 +15,22 @@
 #include "client.h"
 
 
+client *cl = NULL;
+
+static char *invalid_cmd = "Invalid command.";
+static char *unknown_cmd = "Unknown command.";
+
+static cmd_tok cmd_toks[] = {
+    {CMD_DEBG, "debg", "/debg           debug server"},
+    {CMD_HELP, "help", "/help <cmd>     see more details about a specific command"},
+    {CMD_WHO,  "who",  "/who            list users on the server"},
+    {CMD_MSG,  "msg",  "/msg <nick> ... send a private message"},
+    {CMD_NICK, "nick", "/nick <nick>    set your nickname"},
+    {CMD_QUIT, "quit", "/quit           quit tCHATche client"},
+    {CMD_SEND, "send", "/send <nick> <file> send a file"},
+    {CMD_SHUT, "shut", "/shut <pwd>     shut down the server"},
+};
+
 /* Client init functions */
 
 client *
@@ -143,7 +159,9 @@ exec_command(client *cl, char *buf, size_t len)
         break;
     case CMD_NICK: {
         /* We restrict the nickname to 1-11 characters, validated by isgraph */
+        logs("%s\n", buf);
         writedata(cl->server_pipe, req_client_HELO(buf, cl->client_path));
+        tui_clear_field(cl->ui);
         break;
     }
     case CMD_QUIT:
@@ -237,10 +255,10 @@ main(int argc, char *argv[])
 {
     setlocale(LC_ALL, "");
 
-    logs_start("/dev/pts/2");
+    logs_start(LOG_FILE, "[CLIENT] ");
 
     /* Init client */
-    client *cl = client_init();
+    cl = client_init();
     options_handler(argc, argv, cl);
     if (!open_server_pipe(cl) || !open_client_pipe(cl))
         exit(EXIT_FAILURE);

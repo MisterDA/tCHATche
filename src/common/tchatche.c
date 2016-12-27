@@ -53,16 +53,17 @@ char *mktmpfifo_server(void)
 
 
 static FILE *log_file = NULL;
+static const char *log_motd = "";
 
-void logs_start(char *path) {
+void logs_start(char *path, const char *motd) {
     if (log_file) {
         fputs("Logging had already started", stderr);
         exit(EXIT_FAILURE);
     } else if ((log_file = fopen(path, "a")) == NULL) {
         error_exit(path);
     }
-    fputs("\n\n", log_file);
     fflush(log_file);
+    log_motd = motd;
 }
 
 void logs(const char *fmt, ...) {
@@ -70,6 +71,7 @@ void logs(const char *fmt, ...) {
         fputs("Logging had not started", stderr);
         exit(EXIT_FAILURE);
     }
+    fputs(log_motd, log_file);
     va_list varglist;
     va_start(varglist, fmt);
     vfprintf(log_file, fmt, varglist);
@@ -78,6 +80,7 @@ void logs(const char *fmt, ...) {
 }
 
 void logs_end(void) {
+    fputs("\n\n", log_file);
     if (log_file)
         fclose(log_file);
     log_file = NULL;

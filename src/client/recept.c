@@ -1,6 +1,7 @@
 #include "packet_reception.h"
 
 #include "packet.h"
+#include "client.h"
 
 #define OKOK TYPE('O','K','O','K')
 #define BADD TYPE('H','E','L','O')
@@ -16,6 +17,7 @@ process_packet(data packet)
 {
 	char *t = read_type(&packet);
 	if (!t) return -1;
+	tui_add_txt(cl->ui, packet.ata);
 	switch (*(uint32_t *)t) {
 		case OKOK: return 0;
 		case BADD: return 0;
