@@ -3,6 +3,13 @@
 #include "packet.h"
 #include <stdio.h> //DEV
 #include <unistd.h> //DEV
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#include "server.h"
+#include "user.h"
+#include "request.h"
+#include "tchatche.h"
 
 #define HELO TYPE('H','E','L','O')
 #define BYEE TYPE('B','Y','E','E')
@@ -13,7 +20,7 @@
 #define DEBG TYPE('D','E','B','G')
 #define FILE TYPE('F','I','L','E')
 
-static int received_HELO(char *pseudo, char *pipe);
+static int received_HELO(char *nick, char *pipe);
 static int received_BYEE(uint32_t id);
 static int received_BCST(uint32_t id, char *msg, size_t msglen);
 static int received_SHUT(uint32_t id, char *password);
@@ -24,14 +31,16 @@ process_packet(data d)
 	shift_data(&d, SIZEOF_NUM);
 	char *t = read_type(&d);
 	if (!t) return -1;
-	switch (*(uint32_t *)t) {
+	logs("%x => %s\n", *(uint32_t *) t, d.ata);
+	switch (*(uint32_t *) t) {
 		case HELO:
 		{
-			char pseudo[32+1]; //TODO PSEUDO_MAX_LENGTH
-			if (!read_str(&d, pseudo, 32+1)) return ERR_INVALID;
+			logs("case HELO\n");
+			char nick[32+1]; //TODO NICK_MAX_LENGTH
+			if (!read_str(&d, nick, 32+1)) return ERR_INVALID;
 			char pipe[256+1]; //TODO PIPE_MAX_LENGTH
 			if (!read_str(&d, pipe, 256+1)) return ERR_INVALID;
-			return received_HELO(pseudo, pipe);
+			return received_HELO(nick, pipe);
 		}
 		case BYEE:
 		{
@@ -67,11 +76,27 @@ process_packet(data d)
 
 
 static int
-received_HELO(char *pseudo, char *pipe)
+received_HELO(char *nick, char *path)
 {
-	printf("[%s] wants to join\n", pseudo);
-	//TODO give id to client
+	printf("[%s] wants to join\n", nick);
+	if (user_from_nick(serv->users, nick) == NULL) {
+		user_id id = get_available_id(serv->users);
+		if (id > MAX_USERS)
+			goto badd;
+		int pipe = open(path, O_WRONLY);
+		if (pipe == -1) {
+			perror(path);
+			goto badd;
+		}
+		user *u = user_create(id, nick, pipe);
+		arlist_add(serv->users, compare_users, u);
+		writedata(pipe, req_server_OKOK(id));
+	}
 	return 0;
+
+	badd:
+	writedata(pipe, req_server_BADD());
+	return ERR_UNKNOWN;
 }
 
 static int

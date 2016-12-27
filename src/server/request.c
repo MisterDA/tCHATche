@@ -31,46 +31,46 @@ req_server_BYEE(uint32_t id)
 }
 
 data
-req_server_BCST(char *pseudo, char *msg, size_t msglen)
+req_server_BCST(char *nick, char *msg, size_t msglen)
 {
 	INIT(d);
 	DO write_type(&d, "BCST");
-	DO write_str(&d, pseudo);
+	DO write_str(&d, nick);
 	DO write_mem(&d, msg, msglen);
 	END(d);
 }
 
 data
-req_server_PRVT(char *pseudo, char *msg, size_t msglen)
+req_server_PRVT(char *nick, char *msg, size_t msglen)
 {
 	INIT(d);
 	DO write_type(&d, "PRVT");
-	DO write_str(&d, pseudo);
+	DO write_str(&d, nick);
 	DO write_mem(&d, msg, msglen);
 	END(d);
 }
 
 data
-req_server_LIST(uint32_t n, char *pseudo)
+req_server_LIST(uint32_t n, char *nick)
 {
 	INIT(d);
 	DO write_type(&d, "LIST");
 	DO write_num(&d, n);
-	DO write_str(&d, pseudo);
+	DO write_str(&d, nick);
 	END(d);
 }
 
 data
-req_server_SHUT(char *pseudo)
+req_server_SHUT(char *nick)
 {
 	INIT(d);
 	DO write_type(&d, "SHUT");
-	DO write_str(&d, pseudo);
+	DO write_str(&d, nick);
 	END(d);
 }
 
 data
-req_server_FILE_announce(uint32_t idtransfer, uint32_t len, char *filename, char *pseudo)
+req_server_FILE_announce(uint32_t idtransfer, uint32_t len, char *filename, char *nick)
 {
 	INIT(d);
 	DO write_type(&d, "FILE");
@@ -78,8 +78,8 @@ req_server_FILE_announce(uint32_t idtransfer, uint32_t len, char *filename, char
 	DO write_num(&d, idtransfer);
 	DO write_longnum(&d, len);
 	DO write_str(&d, filename);
-	if (pseudo) // extention du protocole : pseudo de l'expediteur
-		DO write_str(&d, pseudo);
+	if (nick) /* extension du protocole : pseudo de l'expéditeur */
+		DO write_str(&d, nick);
 	END(d);
 }
 
@@ -94,4 +94,3 @@ req_server_FILE_transfer(uint32_t serie, uint32_t idtransfer, data buf)
 	DO write_data(&d, &buf);
 	END(d);
 }
-

@@ -99,7 +99,7 @@ arlist_add(arlist *l, int (*cmp)(const void *, const void *), void *e)
 {
     if (l->size == SIZE_MAX)
         return false;
-    if (cmp(l->elements[l->size - 1], e) < 0)
+    if (l->size == 0 || cmp(l->elements[l->size - 1], e) < 0)
         return arlist_push(l, e);
     /* TODO: optimize with binary search */
     for (size_t i = 0; i < l->size; ++i) {

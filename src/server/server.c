@@ -12,9 +12,12 @@
 #include <ctype.h>
 #include <getopt.h>
 
+#include "server.h"
 #include "request.h"
 #include "packet_reception.h"
+#include "user.h"
 
+server *serv = NULL;
 static char *jr_pipe;
 static bool jr_mode = false, daemonize = false;
 
@@ -71,6 +74,7 @@ int
 main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
+	logs_start(LOG_FILE, "[SERVER] ");
 	options_handler(argc, argv);
 
 	if (daemonize && daemon(0, 0) == -1)
@@ -83,39 +87,29 @@ main(int argc, char *argv[])
 
 	int server_pipe = open(server_path, O_RDWR);
 
-	/* // CLASSIC
-	int r;
-	bool quit = false;
-	const int buf_len = 127;
-	char *buf = malloc(buf_len + 1);
-	while (!quit) {
-		while ((r = read(server_pipe, buf, buf_len)) > 0) {
-	 		buf[r] = '\0';
-			puts(buf);
-			fflush(stdout);
-			if (strcmp(buf, "quit") == 0) {
-				quit = true;
-				break;
-			}
-			if (r>=8 && strncmp(buf+4,"SHUT",4)==0) {
-				quit = true;
-				break;
-			}
-		}
-	} /*/ // SWITCH
+	serv = malloc(sizeof(*serv));
+	serv->users = arlist_create();
+	serv->pipe = server_pipe;
+
 	while (true) {
 		if (read_packet(server_pipe,false)<0)
 			break;
 	}
-	//*/
+
+	arlist_destroy(serv->users, user_destroy);
+	free(serv);
 
 	close(server_pipe);
 	unlink(server_path);
 	if (symlink_created)
 		unlink("/tmp/tchatche/server");
 	free(server_path);
+	logs_end();
 
 	return EXIT_SUCCESS;
+
+
+
 
 
 	here_jr:; /* Code de JR */
@@ -162,7 +156,6 @@ main(int argc, char *argv[])
 
 	}
 	close(pipe);
-
 
 	return 0;
 }

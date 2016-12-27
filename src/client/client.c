@@ -21,7 +21,7 @@ static char *invalid_cmd = "Invalid command.";
 static char *unknown_cmd = "Unknown command.";
 
 static cmd_tok cmd_toks[] = {
-    {CMD_DEBG, "debg", "/debg           debug server"},
+    {CMD_DEBG, "debug", "/debug         debug server"},
     {CMD_HELP, "help", "/help <cmd>     see more details about a specific command"},
     {CMD_WHO,  "who",  "/who            list users on the server"},
     {CMD_MSG,  "msg",  "/msg <nick> ... send a private message"},
@@ -181,7 +181,7 @@ void input_handler(client *cl, char *buf, size_t len) {
     if (buf[0] == '/') {
         exec_command(cl, buf + 1, len - 1);
     } else if (!cl->has_id) {
-        tui_add_txt(cl->ui, "No id ! /nick");
+        tui_add_txt(cl->ui, "Use /nick to set your nickname.");
     } else {
         writedata(cl->server_pipe, req_client_BCST(cl->id, buf, len));
     }
