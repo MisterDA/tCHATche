@@ -1,5 +1,6 @@
 CC += gcc
-CFLAGS=-Wall -Wextra -std=c11 -Og -ggdb -Isrc/client -Isrc/server -Isrc/common
+CFLAGS=-Wall -Wextra -std=c11 -Og -ggdb -Isrc/client -Isrc/server -Isrc/common \
+       -D_GNU_SOURCE -D_XOPEN_SOURCE
 LDFLAGS +=
 
 !cc = |> $(CC) $(CFLAGS) -c %f -o %o -Isrc/client -Isrc/common -Isrc/server -fdiagnostics-color=always |> %B.o
