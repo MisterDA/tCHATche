@@ -26,4 +26,7 @@ void *arlist_tail(arlist *);
 bool arlist_push(arlist *, void *);
 void *arlist_pop(arlist *);
 
+bool arlist_add(arlist *, int (*cmp)(const void *, const void *), void *);
+void *arlist_remove(arlist *, size_t);
+
 #endif

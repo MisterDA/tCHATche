@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 arlist *
 arlist_create(void)
@@ -91,4 +92,39 @@ arlist_pop(arlist *l)
             l->elements = elements;
     }
     return l->elements[--(l->size)];
+}
+
+bool
+arlist_add(arlist *l, int (*cmp)(const void *, const void *), void *e)
+{
+    if (l->size == SIZE_MAX)
+        return false;
+    if (cmp(l->elements[l->size - 1], e) < 0)
+        return arlist_push(l, e);
+    /* TODO: optimize with binary search */
+    for (size_t i = 0; i < l->size; ++i) {
+        int c = cmp(l->elements[i], e);
+        if (c == 0) return false;
+        if (c > 0) {
+            void *tail = arlist_tail(l);
+            memmove(l->elements + i + 1, l->elements + i, l->size - i - 1);
+            arlist_push(l, tail);
+            l->elements[i] = e;
+            return true;
+        }
+    }
+    return false;
+}
+
+void *
+arlist_remove(arlist *l, size_t n)
+{
+    if (n >= l->size)
+        return NULL;
+    if (n == l->size - 1)
+        return arlist_pop(l);
+    void *e = l->elements[n];
+    memmove(l->elements + n, l->elements + n + 1, l->size - n);
+    --(l->size);
+    return e;
 }
