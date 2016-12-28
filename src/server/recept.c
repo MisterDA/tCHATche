@@ -1,15 +1,10 @@
+/* SERVER */
 #include "packet_reception.h"
 
+#include "process.h"
 #include "packet.h"
-#include <stdio.h> //DEV
-#include <unistd.h> //DEV
-#include <sys/stat.h>
-#include <fcntl.h>
 
-#include "server.h"
-#include "user.h"
-#include "request.h"
-#include "tchatche.h"
+#include "tchatche.h" //DEV -> logs()
 
 #define HELO TYPE('H','E','L','O')
 #define BYEE TYPE('B','Y','E','E')
@@ -20,108 +15,100 @@
 #define DEBG TYPE('D','E','B','G')
 #define FILE TYPE('F','I','L','E')
 
-static int received_HELO(char *nick, char *pipe);
-static int received_BYEE(uint32_t id);
-static int received_BCST(uint32_t id, char *msg, size_t msglen);
-static int received_SHUT(uint32_t id, char *password);
+// TODO: global define
+#define NICK_MAX_LENGTH 32
+#define PIPE_MAX_LENGTH 256
+#define FILE_MAX_LENGTH 64
+#define PASS_MAX_LENGTH 64
 
 int
 process_packet(data d)
 {
 	shift_data(&d, SIZEOF_NUM);
 	char *t = read_type(&d);
-	if (!t) return -1;
-	logs("%x => %s\n", *(uint32_t *) t, d.ata);
+	if (!t) return ERR_INVALID;
+	//logs("%x => %s\n", *(uint32_t *) t, d.ata); //DEV
 	switch (*(uint32_t *) t) {
 		case HELO:
 		{
-			logs("case HELO\n");
-			char nick[32+1]; //TODO NICK_MAX_LENGTH
-			if (!read_str(&d, nick, 32+1)) return ERR_INVALID;
-			char pipe[256+1]; //TODO PIPE_MAX_LENGTH
-			if (!read_str(&d, pipe, 256+1)) return ERR_INVALID;
-			return received_HELO(nick, pipe);
+			//logs("case HELO\n"); //DEV
+			char nick[NICK_MAX_LENGTH+1];
+			if (!read_str(&d, nick, NICK_MAX_LENGTH+1)) return ERR_INVALID;
+			char pipe[PIPE_MAX_LENGTH+1];
+			if (!read_str(&d, pipe, PIPE_MAX_LENGTH+1)) return ERR_INVALID;
+			return pro_client_HELO(nick, pipe);
 		}
 		case BYEE:
 		{
-			int id = read_num(&d);
+			uint32_t id = read_num(&d);
 			if (id>MAX_NUM) return ERR_INVALID;
-			return received_BYEE(id);
+			return pro_client_BYEE(id);
 		}
 		case BCST:
 		{
-			int id = read_num(&d);
+			uint32_t id = read_num(&d);
 			if (id>MAX_NUM) return ERR_INVALID;
 			data msg;
 			if (!read_mem(&d, &msg)) return ERR_INVALID;
-			return received_BCST(id, msg.ata, msg.length);
+			return pro_client_BCST(id, msg.ata, msg.length);
 		}
-		case PRVT: return 0;
-		case LIST: return 0;
+		case PRVT:
+		{
+			uint32_t id = read_num(&d);
+			if (id>MAX_NUM) return ERR_INVALID;
+			char nick[NICK_MAX_LENGTH+1];
+			if (!read_str(&d, nick, NICK_MAX_LENGTH+1)) return ERR_INVALID;
+			data msg;
+			if (!read_mem(&d, &msg)) return ERR_INVALID;
+			return pro_client_PRVT(id, nick, msg.ata, msg.length);
+		}
+		case LIST:
+		{
+			uint32_t id = read_num(&d);
+			if (id>MAX_NUM) return ERR_INVALID;
+			return pro_client_LIST(id);
+		}
 		case SHUT:
 		{
-			int id = read_num(&d);
+			uint32_t id = read_num(&d);
 			if (id>MAX_NUM) return ERR_INVALID;
 			if (d.length==0)
-				return received_SHUT(id, NULL);
-			char pass[64+1]; //TODO PASSWORD_MAX_LENGTH
-			if (!read_str(&d, pass, 64+1)) return ERR_INVALID;
-			return received_SHUT(id, pass);
+				return pro_client_SHUT(id, NULL);
+			char pass[PASS_MAX_LENGTH+1];
+			if (!read_str(&d, pass, PASS_MAX_LENGTH+1)) return ERR_INVALID;
+			return pro_client_SHUT(id, pass);
 		}
-		case DEBG: return 0;
-		case FILE: return 0;
+		case DEBG:
+		{
+			if (d.length==0)
+				return pro_client_DEBG(NULL);
+			char pass[PASS_MAX_LENGTH+1];
+			if (!read_str(&d, pass, PASS_MAX_LENGTH+1)) return ERR_INVALID;
+			return pro_client_DEBG(pass);
+		}
+		case FILE:
+		{
+			uint32_t serie = read_num(&d);
+			if (serie>MAX_NUM) return ERR_INVALID;
+			if (serie == 0) {
+				uint32_t id = read_num(&d);
+				if (id>MAX_NUM) return ERR_INVALID;
+				char nick[NICK_MAX_LENGTH+1];
+				if (!read_str(&d, nick, NICK_MAX_LENGTH+1)) return ERR_INVALID;
+				uint32_t len = read_longnum(&d);
+				if (len>MAX_LONGNUM) return ERR_INVALID;
+				char filename[FILE_MAX_LENGTH+1];
+				if (!read_str(&d, filename, FILE_MAX_LENGTH+1)) return ERR_INVALID;
+				return pro_client_FILE_announce(id, nick, len, filename);
+			} else {
+				uint32_t idtransfer = read_num(&d);
+				if (idtransfer>MAX_NUM) return ERR_INVALID;
+				data buf;
+				if (!read_mem(&d, &buf)) return ERR_INVALID;
+				return pro_client_FILE_transfer(serie, idtransfer, buf);
+			}
+		}
 		default: return ERR_UNKNOWN;
 	}
 }
 
-
-static int
-received_HELO(char *nick, char *path)
-{
-	printf("[%s] wants to join\n", nick);
-	if (user_from_nick(serv->users, nick) == NULL) {
-		user_id id = get_available_id(serv->users);
-		if (id > MAX_USERS)
-			goto badd;
-		int pipe = open(path, O_WRONLY);
-		if (pipe == -1) {
-			perror(path);
-			goto badd;
-		}
-		user *u = user_create(id, nick, pipe);
-		arlist_add(serv->users, compare_users, u);
-		writedata(pipe, req_server_OKOK(id));
-	}
-	return 0;
-
-	badd:
-	writedata(pipe, req_server_BADD());
-	return ERR_UNKNOWN;
-}
-
-static int
-received_BYEE(uint32_t id)
-{
-	printf("User%u disconnects\n", id);
-	//TODO suppress user
-	return 0;
-}
-
-static int
-received_BCST(uint32_t id, char *msg, size_t msglen)
-{
-	printf("User%u : ", id); fflush(stdout);
-	write(1, msg, msglen);
-	putchar('\n');
-	//TODO answer to clients
-	return 0;
-}
-
-static int
-received_SHUT(uint32_t id, char *password)
-{
-	printf("SHUT (%s) from User%u", password, id); fflush(stdout);
-	putchar('\n');
-	//TODO shutdown
-	return 0;
-}
