@@ -5,11 +5,11 @@
 static char buffer[MAX_REQUEST_LENGTH+1];
 
 data
-req_client_HELO(char *pseudo, char *pipe)
+req_client_HELO(char *nick, char *pipe)
 {
 	INIT(d);
 	DO write_type(&d, "HELO");
-	DO write_str(&d, pseudo);
+	DO write_str(&d, nick);
 	DO write_str(&d, pipe);
 	END(d);
 }
@@ -34,12 +34,12 @@ req_client_BCST(uint32_t id, char *msg, size_t msglen)
 }
 
 data
-req_client_PRVT(uint32_t id, char *pseudo, char *msg, size_t msglen)
+req_client_PRVT(uint32_t id, char *nick, char *msg, size_t msglen)
 {
 	INIT(d);
 	DO write_type(&d, "PRVT");
 	DO write_num(&d, id);
-	DO write_str(&d, pseudo);
+	DO write_str(&d, nick);
 	DO write_mem(&d, msg, msglen);
 	END(d);
 }
@@ -75,13 +75,13 @@ req_client_DEBG(char *password)
 }
 
 data
-req_client_FILE_announce(uint32_t id, char *pseudo, uint32_t len, char *filename)
+req_client_FILE_announce(uint32_t id, char *nick, uint32_t len, char *filename)
 {
 	INIT(d);
 	DO write_type(&d, "FILE");
 	DO write_num(&d, 0);
 	DO write_num(&d, id);
-	DO write_str(&d, pseudo);
+	DO write_str(&d, nick);
 	DO write_longnum(&d, len);
 	DO write_str(&d, filename);
 	END(d);
