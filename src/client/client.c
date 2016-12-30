@@ -179,7 +179,6 @@ exec_command(client *cl, char *buf, size_t len)
 }
 
 void input_handler(client *cl, char *buf, size_t len) {
-    logs("input_handler: %s %ld\n", buf, len);
     if (buf[0] == '/') {
         exec_command(cl, buf + 1, len - 1);
     } else if (!cl->has_id) {
@@ -258,8 +257,6 @@ main(int argc, char *argv[])
 {
     setlocale(LC_ALL, "");
 
-    logs_start(LOG_FILE, "[CLIENT] ");
-
     /* Init client */
     cl = client_init();
     options_handler(argc, argv, cl);
@@ -332,7 +329,6 @@ main(int argc, char *argv[])
         }
     }
 
-    logs_end();
     client_end(cl);
     return EXIT_SUCCESS;
 }

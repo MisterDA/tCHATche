@@ -2,6 +2,7 @@
 
 #include "client.h"
 
+#include <stdlib.h>
 #include <stdio.h> //DEV
 #include <unistd.h> //DEV
 #include "tchatche.h"
@@ -31,6 +32,10 @@ pro_server_BADD()
 int
 pro_server_BYEE(uint32_t id)
 {
+	if (cl->id != id)
+		return -1;
+	client_end(cl);
+	exit(EXIT_SUCCESS);
 	return 0;
 }
 
@@ -57,6 +62,9 @@ pro_server_LIST(uint32_t n, char *nick)
 int
 pro_server_SHUT(char *nick)
 {
+	tui_print_txt(cl->ui, "<%s> has stopped the server !\n", nick);
+	client_end(cl);
+	exit(EXIT_SUCCESS);
 	return 0;
 }
 

@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 user *
 user_create(user_id id, char *nick, char *path, int pipe)
@@ -18,6 +19,7 @@ void
 user_destroy(void *e) {
     user *u = (user *) e;
     free(u->nick);
+    close(u->pipe);
     free(u->path);
     free(u);
 }

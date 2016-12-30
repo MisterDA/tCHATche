@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <getopt.h>
+#include <dirent.h>
 
 #include "server.h"
 #include "request.h"
@@ -20,6 +21,50 @@
 server *serv = NULL;
 static char *jr_pipe;
 static bool jr_mode = false, daemonize = false;
+
+static bool
+dir_is_empty(const char *path)
+{
+	DIR *dir;
+	bool ret = true;
+	struct dirent *ent;
+	if ((dir = opendir(path)) == NULL)
+		return false;
+	while ((ent = readdir(dir))) {
+		if (!strcmp(ent->d_name, ".") || !(strcmp(ent->d_name, "..")))
+			continue;
+		ret = false;
+		break;
+	}
+	closedir(dir);
+	return ret;
+}
+
+server *
+server_init(void)
+{
+	serv = malloc(sizeof(*serv));
+	serv->users = arlist_create();
+	serv->path = mktmpfifo_server();
+	serv->pipe = open(serv->path, O_RDWR);
+	serv->symlink_created = !symlink(basename(serv->path), "/tmp/tchatche/server");
+	return serv;
+}
+
+void
+server_end(server *serv)
+{
+	arlist_destroy(serv->users, user_destroy);
+	close(serv->pipe);
+	unlink(serv->path);
+	if (serv->symlink_created)
+		unlink("/tmp/tchatche/server");
+	free(serv->path);
+	free(serv);
+	if (dir_is_empty("/tmp/tchatche"))
+		unlink("/tmp/tchatche");
+}
+
 
 static void
 options_handler(int argc, char *argv[])
@@ -74,7 +119,6 @@ int
 main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
-	logs_start(LOG_FILE, "[SERVER] ");
 	options_handler(argc, argv);
 
 	if (daemonize && daemon(0, 0) == -1)
@@ -82,30 +126,14 @@ main(int argc, char *argv[])
 	if (jr_mode)
 		goto here_jr;
 
-	char *server_path = mktmpfifo_server();
-	bool symlink_created = !symlink(basename(server_path), "/tmp/tchatche/server");
-
-	int server_pipe = open(server_path, O_RDWR);
-
-	serv = malloc(sizeof(*serv));
-	serv->users = arlist_create();
-	serv->pipe = server_pipe;
+	serv = server_init();
 
 	while (true) {
-		if (read_packet(server_pipe,false)<0)
+		if (read_packet(serv->pipe,false)<0)
 			break;
 	}
 
-	arlist_destroy(serv->users, user_destroy);
-	free(serv);
-
-	close(server_pipe);
-	unlink(server_path);
-	if (symlink_created)
-		unlink("/tmp/tchatche/server");
-	free(server_path);
-	logs_end();
-
+	server_end(serv);
 	return EXIT_SUCCESS;
 
 

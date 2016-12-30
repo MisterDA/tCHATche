@@ -26,7 +26,7 @@ bool is_valid_cred(arlist *list, char *nick, char *path);
 
 user *user_from_id(arlist *list, user_id id);
 user *user_from_nick(arlist *list, char *nick);
-user *user_from_pipe_path(arlist *list, char *path)
+user *user_from_pipe_path(arlist *list, char *path);
 
 ssize_t send_to(user *u, data data);
 void broadcast(arlist *list, data data);

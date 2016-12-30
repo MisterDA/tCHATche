@@ -1,5 +1,6 @@
 #include "process.h"
 
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <time.h>
@@ -42,17 +43,27 @@ pro_client_HELO(char *nick, char *path)
 int
 pro_client_BYEE(uint32_t id)
 {
-	printf("User%u disconnects\n", id);
-	//TODO suppress user
+	size_t i = 0;
+	user *u = NULL;
+	for (; i < arlist_size(serv->users); ++i) {
+		user *v = arlist_get(serv->users, i);
+		if (v->id == id) {
+			u = v;
+			break;
+		}
+	}
+	if (u == NULL) return -1;
+	writedata(u->pipe, req_server_BYEE(id));
+	arlist_remove(serv->users, i);
+	user_destroy(u);
 	return 0;
 }
 
 int
 pro_client_BCST(uint32_t id, char *msg, size_t msglen)
 {
-	user *u;
-	if ((u = user_from_id(serv->users, id)) == NULL)
-		return -1;
+	user *u = user_from_id(serv->users, id);
+	if (u == NULL) return -1;
 	char time_buf[6];
 	time_t t = time(NULL);
 	strftime(time_buf, 6, "%H:%M", localtime(&t));
@@ -84,9 +95,13 @@ pro_client_LIST(uint32_t id)
 int
 pro_client_SHUT(uint32_t id, char *password)
 {
-	printf("SHUT (%s) from User%u", password, id); fflush(stdout);
-	putchar('\n');
-	//TODO shutdown
+	/* TODO: deal with the password */
+	user *u = user_from_id(serv->users, id);
+	printf("SHUT from {id: \"%u\"; nick: \"%s\"; pwd: \"%s\"}\n",
+			id, u->nick, password);
+	broadcast(serv->users, req_server_SHUT(u->nick));
+	server_end(serv);
+	exit(EXIT_SUCCESS);
 	return 0;
 }
 
