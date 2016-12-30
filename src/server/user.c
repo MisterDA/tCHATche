@@ -4,11 +4,12 @@
 #include <stdlib.h>
 
 user *
-user_create(user_id id, char *nick, int pipe)
+user_create(user_id id, char *nick, char *path, int pipe)
 {
     user *u = malloc(sizeof(*u));
     u->id = id;
     u->nick = strdup(nick);
+    u->path = strdup(path);
     u->pipe = pipe;
     return u;
 }
@@ -17,6 +18,7 @@ void
 user_destroy(void *e) {
     user *u = (user *) e;
     free(u->nick);
+    free(u->path);
     free(u);
 }
 
@@ -45,6 +47,17 @@ get_available_id(arlist *list)
     return e2->id + 1;
 }
 
+bool
+is_valid_cred(arlist *list, char *nick, char *path)
+{
+    for (size_t i=0; i<arlist_size(list); i++) {
+        user *u = arlist_get(list,i);
+        if (strcmp(u->nick, nick)==0 || strcmp(u->path, path)==0)
+            return false;
+    }
+    return true;
+}
+
 user *
 user_from_id(arlist *list, user_id id)
 {
@@ -62,6 +75,17 @@ user_from_nick(arlist *list, char *nick)
     for (size_t i=0; i<arlist_size(list); i++) {
         user *u = arlist_get(list,i);
         if (strcmp(u->nick, nick)==0)
+            return u;
+    }
+    return NULL;
+}
+
+user *
+user_from_pipe_path(arlist *list, char *path)
+{
+    for (size_t i=0; i<arlist_size(list); i++) {
+        user *u = arlist_get(list,i);
+        if (strcmp(u->path, path)==0)
             return u;
     }
     return NULL;
