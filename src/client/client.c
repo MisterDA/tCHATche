@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include <string.h>
 #include "tchatche.h"
+#include "packet_reception.h"
 #include "tui.h"
 #include "request.h"
 #include "client.h"
@@ -21,10 +22,10 @@ static char *invalid_cmd = "Invalid command.";
 static char *unknown_cmd = "Unknown command.";
 
 static cmd_tok cmd_toks[] = {
-    {CMD_DEBG, "debug", "/debug         debug server"},
+    {CMD_DEBG, "debug", "/debug          debug server"},
     {CMD_HELP, "help", "/help <cmd>     see more details about a specific command"},
-    {CMD_WHO,  "who",  "/who            list users on the server"},
-    {CMD_MSG,  "msg",  "/msg <nick> ... send a private message"},
+    {CMD_WHO,  "who", "/who            list users on the server"},
+    {CMD_MSG,  "msg", "/msg <nick> ... send a private message"},
     {CMD_NICK, "nick", "/nick <nick>    set your nickname"},
     {CMD_QUIT, "quit", "/quit           quit tCHATche client"},
     {CMD_SEND, "send", "/send <nick> <file> send a file"},
@@ -53,6 +54,7 @@ client_end(client *cl)
     close(cl->client_pipe);
     unlink(cl->client_path);
     free(cl->client_path);
+    free(cl->nick);
     client_end_tui(cl);
     free(cl);
 }
@@ -121,7 +123,6 @@ exec_command(client *cl, char *buf, size_t len)
             cmd = *cmdp;
         } else {
             tui_add_txt(cl->ui, unknown_cmd);
-            tui_clear_field(cl->ui);
             return;
         }
         buf = cmd_txt_end;
@@ -137,7 +138,6 @@ exec_command(client *cl, char *buf, size_t len)
             for (size_t i = 0; i < array_size(cmd_toks); ++i) {
                 tui_add_txt(cl->ui, cmd_toks[i].help_txt);
             }
-            tui_clear_field(cl->ui);
             return;
         } else {
             for (size_t i = 0; i < array_size(cmd_toks); ++i) {
@@ -152,16 +152,18 @@ exec_command(client *cl, char *buf, size_t len)
         break;
     }
     case CMD_WHO:
-        writedata(cl->server_pipe, req_client_LIST(cl->id));;
+        writedata(cl->server_pipe, req_client_LIST(cl->id));
         break;
     case CMD_MSG:
         writedata(cl->server_pipe, req_client_PRVT(cl->id, "", buf, len));
         break;
     case CMD_NICK: {
-        /* We restrict the nickname to 1-11 characters, validated by isgraph */
-        logs("%s\n", buf);
-        writedata(cl->server_pipe, req_client_HELO(buf, cl->client_path));
-        tui_clear_field(cl->ui);
+        if (cl->has_id) {
+            tui_add_txt(cl->ui, "You already have a nick !");
+        } else {
+            cl->nick = strdup(buf);
+            writedata(cl->server_pipe, req_client_HELO(buf, cl->client_path));
+        }
         break;
     }
     case CMD_QUIT:
@@ -185,6 +187,7 @@ void input_handler(client *cl, char *buf, size_t len) {
     } else {
         writedata(cl->server_pipe, req_client_BCST(cl->id, buf, len));
     }
+    tui_clear_field(cl->ui);
 }
 
 static char *
@@ -266,19 +269,14 @@ main(int argc, char *argv[])
     tui *ui = cl->ui;
 
     /* Event loop */
-    size_t current_msg = 0;
-    char buffer[9999] = {0};
-    int ch, r;
+    int ch;
     bool run = true;
     while (run) {
         ch = wgetch(ui->input);
 
-        /* Messages handler */
-        if ((r = read(cl->client_pipe, buffer, sizeof(buffer) - 1))) {
-            buffer[r] = '\0';
-            tui_add_txt(ui, buffer);
-            tui_refresh(ui);
-        }
+        /* Packet handler */
+        int rp = read_packet(cl->client_pipe, true);
+        tui_refresh(ui);
 
         /* Input handler */
         if (ch == ERR) continue;
@@ -317,23 +315,6 @@ main(int argc, char *argv[])
         case '\004': /* EOT - Ctrl-D */
             run = false;
             break;
-        case KEY_F(2):
-            // tui_add_msg(ui, messages + (current_msg++) % array_size(messages));
-            // tui_print_info(ui, ch);
-            tui_refresh(ui);
-            break;
-        case KEY_F(3): {
-            form_driver(ui->form, REQ_VALIDATION);
-            char *buf = trim(field_buffer(ui->fields[0], 0));
-            const size_t len = strlen(buf);
-            tui_msg msg = {time(NULL), "Antonin", buf};
-            if (len > 0) {
-                tui_add_msg(ui, &msg);
-                tui_refresh(ui);
-                tui_clear_field(ui);
-            }
-            break;
-        }
         case '\r':
         case '\n': {
             form_driver(ui->form, REQ_VALIDATION);

@@ -7,7 +7,7 @@
 #include "client.h"//DEV
 
 #define OKOK TYPE('O','K','O','K')
-#define BADD TYPE('H','E','L','O')
+#define BADD TYPE('B','A','D','D')
 #define BYEE TYPE('B','Y','E','E')
 #define BCST TYPE('B','C','S','T')
 #define PRVT TYPE('P','R','V','T')
@@ -27,7 +27,6 @@ process_packet(data d)
 	shift_data(&d, SIZEOF_NUM);
 	char *t = read_type(&d);
 	if (!t) return ERR_INVALID;
-	tui_add_txt(cl->ui, d.ata); //DEV
 	switch (*(uint32_t *)t) {
 		case OKOK:
 		{

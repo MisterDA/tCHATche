@@ -28,16 +28,12 @@ tui_init(void)
     int rows, cols;
     getmaxyx(stdscr, rows, cols);
 
-    int user_cols = 10;
-    int main_cols = cols - user_cols;
-
     tui *ui = malloc(sizeof(tui));
-    ui->info  = newwin(1, main_cols, 0, 0);
-    ui->chat  = newpad(1, main_cols);
-    ui->input = newwin(1, main_cols, rows - 1, 0);
-    ui->users = newwin(rows, user_cols, 0, main_cols);
+    ui->info  = newwin(1, cols, 0, 0);
+    ui->chat  = newpad(1, cols);
+    ui->input = newwin(1, cols, rows - 1, 0);
 
-    ui->fields[0] = new_field(1, main_cols - 2, 0, 0, 0, 0);
+    ui->fields[0] = new_field(1, cols - 2, 0, 0, 0, 0);
     ui->fields[1] = NULL;
     field_opts_off(ui->fields[0], O_AUTOSKIP);
     field_opts_off(ui->fields[0], O_STATIC);
@@ -45,7 +41,7 @@ tui_init(void)
     ui->form = new_form(ui->fields);
 
     set_form_win(ui->form, ui->input);
-    set_form_sub(ui->form, derwin(ui->input, 1, main_cols - 2, 0, 2));
+    set_form_sub(ui->form, derwin(ui->input, 1, cols - 2, 0, 2));
     mvwaddstr(ui->input, 0, 0, "> ");
 
     ui->chat_row = 0;
@@ -68,7 +64,6 @@ tui_refresh(tui *ui)
     wnoutrefresh(stdscr);
     wnoutrefresh(ui->info);
     pnoutrefresh(ui->chat, ui->chat_row, 0, 1, 0, LINES - 2, COLS - 10);
-    wnoutrefresh(ui->users);
     wnoutrefresh(ui->input);
     doupdate();
 }
@@ -82,7 +77,6 @@ tui_end(tui *ui)
     delwin(ui->info);
     delwin(ui->chat);
     delwin(ui->input);
-    delwin(ui->users);
     free(ui);
 }
 
@@ -93,7 +87,7 @@ tui_print_info(tui *ui, int ch)
     waddstr(ui->info, "tCHATche");
     const char *fmt = "%04o - %s        ";
     mvwprintw(ui->info, 0, getmaxx(ui->info) / 2 - sizeof("xxxx -") / 2,
-             fmt, ch, keyname(ch));
+              fmt, ch, keyname(ch));
     mvwaddstr(ui->info, 0, getmaxx(ui->info) - sizeof("Ctrl-D"), "Ctrl-D");
 }
 
@@ -162,6 +156,12 @@ tui_vprint_txt(tui *ui, const char *fmt, va_list varglist)
     wattron(ui->chat, A_DIM);
     vwprintw(ui->chat, fmt, varglist);
     wattroff(ui->chat, A_DIM);
+}
+
+void
+tui_add_user(tui *ui, char *nick)
+{
+    waddstr(ui->chat, nick);
 }
 
 void

@@ -8,7 +8,7 @@
 
 typedef struct tui tui;
 struct tui {
-    WINDOW *info, *chat, *input, *users;
+    WINDOW *info, *chat, *input;
     FORM *form;
     FIELD *fields[2];
 
@@ -31,10 +31,13 @@ void tui_end(tui *);
 void tui_refresh(tui *);
 
 void tui_print_info(tui *, int);
+
 void tui_add_msg(tui *, tui_msg*);
 void tui_add_txt(tui *, const char *);
 void tui_print_txt(tui *, const char *, ...);
 void tui_vprint_txt(tui *, const char *, va_list);
+
+void tui_add_user(tui *, char *);
 
 void tui_clear_field(tui *);
 
