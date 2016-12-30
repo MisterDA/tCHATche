@@ -30,18 +30,19 @@ read_packet(int fd, bool nb)
 		l = read_num(&buf);
 		if (l<4) goto err0;
 	}
-	
+
 	while (c<l) {
 		r = read(fd, buffer+c, l-c);
 		if (r<0) goto err0;
 		c += r;
 		if (c<l && nb) goto nb;
 	}
-	
+
 	buf = (data){buffer, l};
 	process_packet(buf);
+	memset(buffer, 0, MAX_REQUEST_LENGTH);
 	c = 0;
-	
+
 	nb: return 0;
 	err0: return -1;
 }
