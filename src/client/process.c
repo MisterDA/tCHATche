@@ -3,6 +3,7 @@
 #include "client.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h> //DEV
 #include <unistd.h> //DEV
 #include "tchatche.h"
@@ -40,15 +41,29 @@ pro_server_BYEE(uint32_t id)
 }
 
 int
-pro_server_BCST(char *nick, char *msg, __attribute__((unused)) size_t msglen)
+pro_server_BCST(char *nick, char *msg, size_t msglen)
 {
-	tui_add_msg(cl->ui, &(tui_msg){time(NULL), nick, msg});
+	//FIXME msg est un pointeur sur le buff originel, au choix, faire une copie, un malloc ?
+	//ATTENTION: nick est aussi un pointeur sur un buff temporaire (mais null-terminated)
+	char *message = malloc(msglen+1);
+	strncpy(message, msg, msglen);
+	message[msglen] = '\0';
+	tui_add_msg(cl->ui, &(tui_msg){time(NULL), nick, message});
+	free(message); // ou bien ajouter à une structure de donnée ?
 	return 0;
 }
 
 int
 pro_server_PRVT(char *nick, char *msg, size_t msglen)
 {
+	//TODO apparence de msg privé
+	char *message = malloc(msglen+2+1);
+	message[0] = '*';
+	strncpy(message+1, msg, msglen);
+	message[msglen+1] = '*';
+	message[msglen+2] = '\0';
+	tui_add_msg(cl->ui, &(tui_msg){time(NULL), nick, message});
+	free(message);
 	return 0;
 }
 

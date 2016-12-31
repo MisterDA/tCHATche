@@ -19,7 +19,7 @@ int
 pro_client_HELO(char *nick, char *path)
 {
 	int pipe;
-	printf("HELO from {nick: \"%s\"; path: \"%s\"}\n", nick, path);
+	printf("HELO from {nick: \"%s\"; path: \"%s\"}\n", nick, path); //DEV
 	if ((pipe = open(path, O_WRONLY)) == -1)
 		return 0; /* can't send BADD because there is no pipe */
 	if (!is_valid_cred(serv->users, nick, path))
@@ -29,13 +29,13 @@ pro_client_HELO(char *nick, char *path)
 		goto badd;
 	user *u = user_create(id, nick, path, pipe);
 	arlist_add(serv->users, compare_users, u);
-	writedata(pipe, req_server_OKOK(id));
+	send_to(u, req_server_OKOK(id));
 	printf("Added {nick: \"%s\"; id: %d; path: \"%s\"; pipe: \"%d\"}\n",
-			nick, id, path, pipe);
+			nick, id, path, pipe); //DEV
 	return 0;
 
 	badd:
-	printf("Refused {nick: \"%s\"; path: \"%s\"}\n", nick, path);
+	printf("Refused {nick: \"%s\"; path: \"%s\"}\n", nick, path); //DEV
 	writedata(pipe, req_server_BADD());
 	return 0;
 }
@@ -53,7 +53,7 @@ pro_client_BYEE(uint32_t id)
 		}
 	}
 	if (u == NULL) return -1;
-	writedata(u->pipe, req_server_BYEE(id));
+	send_to(u, req_server_BYEE(id));
 	arlist_remove(serv->users, i);
 	user_destroy(u);
 	return 0;
@@ -67,7 +67,8 @@ pro_client_BCST(uint32_t id, char *msg, size_t msglen)
 	char time_buf[6];
 	time_t t = time(NULL);
 	strftime(time_buf, 6, "%H:%M", localtime(&t));
-	printf("%s <%u:%s> [%zu] %s\n", time_buf, id, u->nick, msglen, msg);
+	printf("%s <%u:%s> [%zu] ", time_buf, id, u->nick, msglen); //DEV
+	fflush(stdout); write(1,msg,msglen); printf("\n"); //DEV
 	broadcast(serv->users, req_server_BCST(u->nick, msg, msglen));
 	return 0;
 }
@@ -75,7 +76,18 @@ pro_client_BCST(uint32_t id, char *msg, size_t msglen)
 int
 pro_client_PRVT(uint32_t id, char *nick, char *msg, size_t msglen)
 {
-	//TODO broadcast to single client
+	user *u = user_from_id(serv->users, id);
+	user *cl = user_from_nick(serv->users, nick);
+	if (u == NULL) return -1;
+	char time_buf[6];
+	time_t t = time(NULL);
+	strftime(time_buf, 6, "%H:%M", localtime(&t));
+	printf("%s <%u:%s->%s> [%zu] ", time_buf, id, u->nick, nick, msglen); //DEV
+	fflush(stdout); write(1,msg,msglen); printf("\n"); //DEV
+	if (cl)
+		send_to(cl, req_server_PRVT(u->nick, msg, msglen));
+	else
+		send_to(u, req_server_BCST("SERVER", "unkown user", 11)); // error message
 	return 0;
 }
 
@@ -83,11 +95,11 @@ int
 pro_client_LIST(uint32_t id)
 {
 	user *u, *cl;
-	if ((cl = user_from_id(serv->users, id)) == NULL)
+	if ((u = user_from_id(serv->users, id)) == NULL)
 		return -1;
 	for (size_t i = 0; i < arlist_size(serv->users); ++i) {
-		u = arlist_get(serv->users, i);
-		writedata(cl->pipe, req_server_LIST(i, u->nick));
+		cl = arlist_get(serv->users, i);
+		send_to(u, req_server_LIST(i, cl->nick));
 	}
 	return 0;
 }
@@ -97,8 +109,9 @@ pro_client_SHUT(uint32_t id, char *password)
 {
 	/* TODO: deal with the password */
 	user *u = user_from_id(serv->users, id);
+	//FIXME u==NULL ?
 	printf("SHUT from {id: \"%u\"; nick: \"%s\"; pwd: \"%s\"}\n",
-			id, u->nick, password);
+			id, u->nick, password); //DEV
 	broadcast(serv->users, req_server_SHUT(u->nick));
 	server_end(serv);
 	exit(EXIT_SUCCESS);

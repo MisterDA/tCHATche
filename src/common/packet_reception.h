@@ -33,6 +33,6 @@ int process_packet(data packet);
 
 #include "packet.h"
 
-int read_packet(int fd, bool bl);
+int read_packet(int fd, bool nb);
 
 #endif

@@ -40,7 +40,7 @@ read_packet(int fd, bool nb)
 
 	buf = (data){buffer, l};
 	process_packet(buf);
-	memset(buffer, 0, MAX_REQUEST_LENGTH);
+	//memset(buffer, 0, MAX_REQUEST_LENGTH); //FIXME useless
 	c = 0;
 
 	nb: return 0;
