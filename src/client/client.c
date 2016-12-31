@@ -163,7 +163,7 @@ exec_command(client *cl, char *buf, size_t len)
             tui_add_txt(cl->ui, "You already have a nick !");
         } else {
             cl->nick = strdup(buf+1);
-            writedata(cl->server_pipe, req_client_HELO(buf, cl->client_path));
+            writedata(cl->server_pipe, req_client_HELO(buf+1, cl->client_path));
         }
         break;
     }
