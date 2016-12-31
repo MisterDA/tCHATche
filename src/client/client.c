@@ -155,13 +155,14 @@ exec_command(client *cl, char *buf, size_t len)
         writedata(cl->server_pipe, req_client_LIST(cl->id));
         break;
     case CMD_MSG:
+    	/* TODO nick */
         writedata(cl->server_pipe, req_client_PRVT(cl->id, "", buf, len));
         break;
     case CMD_NICK: {
         if (cl->has_id) {
             tui_add_txt(cl->ui, "You already have a nick !");
         } else {
-            cl->nick = strdup(buf);
+            cl->nick = strdup(buf+1);
             writedata(cl->server_pipe, req_client_HELO(buf, cl->client_path));
         }
         break;

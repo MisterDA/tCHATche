@@ -45,9 +45,7 @@ pro_server_BCST(char *nick, char *msg, size_t msglen)
 {
 	//FIXME msg est un pointeur sur le buff originel, au choix, faire une copie, un malloc ?
 	//ATTENTION: nick est aussi un pointeur sur un buff temporaire (mais null-terminated)
-	char *message = malloc(msglen+1);
-	strncpy(message, msg, msglen);
-	message[msglen] = '\0';
+	char *message = strndup(msg, msglen);
 	tui_add_msg(cl->ui, &(tui_msg){time(NULL), nick, message});
 	free(message); // ou bien ajouter à une structure de donnée ?
 	return 0;
