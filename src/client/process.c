@@ -55,9 +55,9 @@ pro_server_PRVT(char *nick, char *msg, size_t msglen)
 }
 
 int
-pro_server_LIST(uint32_t __attribute__((unused)) n, char *nick)
+pro_server_LIST(uint32_t n, char *nick)
 {
-	tui_add_user(cl->ui, nick);
+	tui_add_user(cl->ui, n, nick);
 	return 0;
 }
 

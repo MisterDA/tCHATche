@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tui.h"
+#include "arraylist.h"
 
 void
 tui_init_curses(void)
@@ -178,9 +179,37 @@ tui_vprint_txt(tui *ui, const char *fmt, va_list varglist)
 }
 
 void
-tui_add_user(tui *ui, char *nick)
+tui_add_user(tui *ui, uint32_t n, char *nick)
 {
-    waddstr(ui->chat, nick);
+    static uint32_t total = -1;
+    static arlist *users = NULL;
+
+    if (total != n) {
+        total = n;
+        if (users) arlist_destroy(users, free);
+        users = arlist_create();
+    }
+
+    arlist_push(users, strdup(nick));
+    if (n == arlist_size(users)) {
+        char *str;
+        size_t len;
+        for (size_t i = 0; i < arlist_size(users); ++i) {
+            len = 0;
+            str = arlist_get(users, i);
+            len += strlen(str) + 1;
+            wresize(ui->chat, getmaxy(ui->chat) + 2, getmaxx(ui->chat));
+            if (len > (size_t)COLS) {
+                waddch(ui->chat, '\n');
+            }
+            waddstr(ui->chat, arlist_get(users, i));
+            waddch(ui->chat, '\t');
+        }
+        waddch(ui->chat, '\n');
+        arlist_destroy(users, free);
+        total = -1;
+        users = NULL;
+    }
 }
 
 void

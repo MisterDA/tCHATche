@@ -96,7 +96,7 @@ pro_client_LIST(uint32_t id)
 		return -1;
 	for (size_t i = 0; i < arlist_size(serv->users); ++i) {
 		cl = arlist_get(serv->users, i);
-		send_to(u, req_server_LIST(i, cl->nick));
+		send_to(u, req_server_LIST(arlist_size(serv->users), cl->nick));
 	}
 	return 0;
 }

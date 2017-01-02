@@ -38,7 +38,7 @@ void tui_add_txt(tui *, const char *);
 void tui_print_txt(tui *, const char *, ...);
 void tui_vprint_txt(tui *, const char *, va_list);
 
-void tui_add_user(tui *, char *);
+void tui_add_user(tui *,  uint32_t, char *);
 
 void tui_clear_field(tui *);
 
