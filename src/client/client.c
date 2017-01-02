@@ -114,8 +114,10 @@ void
 exec_command(client *cl, char *buf, size_t len)
 {
     cmd_tok cmd;
+    size_t cmd_len;
+    char * cmd_txt_end;
     { /* extract command */
-        char *cmd_txt_end = strchrnul(buf, ' ');
+        cmd_txt_end = strchrnul(buf, ' ');
         bool was_null = *cmd_txt_end == '\0';
         if (!was_null) *cmd_txt_end = '\0';
         cmd_tok *cmdp = command_tok(buf);
@@ -125,6 +127,7 @@ exec_command(client *cl, char *buf, size_t len)
             tui_add_txt(cl->ui, unknown_cmd);
             return;
         }
+        cmd_len = cmd_txt_end - buf;
         buf = cmd_txt_end;
         if (!was_null) buf[0] = ' ';
     }
@@ -154,10 +157,18 @@ exec_command(client *cl, char *buf, size_t len)
     case CMD_WHO:
         writedata(cl->server_pipe, req_client_LIST(cl->id));
         break;
-    case CMD_MSG:
-    	/* TODO nick */
-        writedata(cl->server_pipe, req_client_PRVT(cl->id, "", buf, len));
+    case CMD_MSG: {
+        char *nick_end = strchrnul(cmd_txt_end + 1, ' ');
+        size_t nick_len = nick_end - cmd_txt_end;
+        if (*nick_end == '\0' || nick_len + cmd_len >= len) {
+            tui_add_txt(cl->ui, invalid_cmd);
+            break;
+        }
+        *nick_end = '\0';
+        writedata(cl->server_pipe,
+                  req_client_PRVT(cl->id, cmd_txt_end + 1, nick_end + 1, len));
         break;
+    }
     case CMD_NICK: {
         if (cl->has_id) {
             tui_add_txt(cl->ui, "You already have a nick !");
@@ -309,6 +320,9 @@ main(int argc, char *argv[])
             } else if (getcurx(ui->input) == 0) {
                 form_driver(ui->form, REQ_DEL_CHAR);
             }
+            break;
+        case KEY_DC: /* Suppr. */
+            form_driver(ui->form, REQ_DEL_CHAR);
             break;
         case '\004': /* EOT - Ctrl-D */
             run = false;

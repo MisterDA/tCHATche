@@ -32,7 +32,8 @@ void tui_refresh(tui *);
 
 void tui_print_info(tui *, int);
 
-void tui_add_msg(tui *, tui_msg*);
+void tui_add_msg(tui *, tui_msg *);
+void tui_add_prvt_msg(tui *, tui_msg *);
 void tui_add_txt(tui *, const char *);
 void tui_print_txt(tui *, const char *, ...);
 void tui_vprint_txt(tui *, const char *, va_list);

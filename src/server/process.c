@@ -12,9 +12,6 @@
 #include <stdio.h> //DEV
 #include <unistd.h> //DEV
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 int
 pro_client_HELO(char *nick, char *path)
 {
@@ -117,6 +114,9 @@ pro_client_SHUT(uint32_t id, char *password)
 	exit(EXIT_SUCCESS);
 	return 0;
 }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 int
 pro_client_DEBG(char *password)

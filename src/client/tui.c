@@ -125,6 +125,24 @@ tui_add_msg(tui *ui, tui_msg *msg)
 }
 
 void
+tui_add_prvt_msg(tui *ui, tui_msg *msg)
+{
+    bool newline;
+    char time_buf[6];
+    int lines = tui_count_lines(ui, msg->txt, 5 + 4 + strlen(msg->sender),
+                                &newline);
+
+    wresize(ui->chat, getmaxy(ui->chat) + lines, getmaxx(ui->chat));
+    strftime(time_buf, 6, "%H:%M", localtime(&msg->timestamp));
+    wprintw(ui->chat, "%s [%s] %s", time_buf, msg->sender, msg->txt);
+    if (newline)
+        waddch(ui->chat, '\n');
+    if (getcury(ui->chat) == getmaxy(ui->chat) - 1 &&
+        getmaxy(ui->chat) > LINES - 2)
+        ui->chat_row += lines;
+}
+
+void
 tui_add_txt(tui *ui, const char *txt)
 {
     bool newline;
@@ -153,9 +171,10 @@ tui_print_txt(tui *ui, const char *fmt, ...)
 void
 tui_vprint_txt(tui *ui, const char *fmt, va_list varglist)
 {
-    wattron(ui->chat, A_DIM);
-    vwprintw(ui->chat, fmt, varglist);
-    wattroff(ui->chat, A_DIM);
+    char *buf;
+    vasprintf(&buf, fmt, varglist);
+    tui_add_txt(ui, buf);
+    free(buf);
 }
 
 void

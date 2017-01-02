@@ -8,10 +8,6 @@
 #include <unistd.h> //DEV
 #include "tchatche.h"
 
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 int
 pro_server_OKOK(uint32_t id)
 {
@@ -43,30 +39,23 @@ pro_server_BYEE(uint32_t id)
 int
 pro_server_BCST(char *nick, char *msg, size_t msglen)
 {
-	//FIXME msg est un pointeur sur le buff originel, au choix, faire une copie, un malloc ?
-	//ATTENTION: nick est aussi un pointeur sur un buff temporaire (mais null-terminated)
 	char *message = strndup(msg, msglen);
-	tui_add_msg(cl->ui, &(tui_msg){time(NULL), nick, message});
-	free(message); // ou bien ajouter à une structure de donnée ?
-	return 0;
-}
-
-int
-pro_server_PRVT(char *nick, char *msg, size_t msglen)
-{
-	//TODO apparence de msg privé
-	char *message = malloc(msglen+2+1);
-	message[0] = '*';
-	strncpy(message+1, msg, msglen);
-	message[msglen+1] = '*';
-	message[msglen+2] = '\0';
 	tui_add_msg(cl->ui, &(tui_msg){time(NULL), nick, message});
 	free(message);
 	return 0;
 }
 
 int
-pro_server_LIST(uint32_t n, char *nick)
+pro_server_PRVT(char *nick, char *msg, size_t msglen)
+{
+	char *message = strndup(msg, msglen);
+	tui_add_prvt_msg(cl->ui, &(tui_msg){time(NULL), nick, message});
+	free(message);
+	return 0;
+}
+
+int
+pro_server_LIST(uint32_t __attribute__((unused)) n, char *nick)
 {
 	tui_add_user(cl->ui, nick);
 	return 0;
@@ -80,6 +69,9 @@ pro_server_SHUT(char *nick)
 	exit(EXIT_SUCCESS);
 	return 0;
 }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 int
 pro_server_FILE_announce(uint32_t intransfert, uint32_t len, char *filename, char *nick)
