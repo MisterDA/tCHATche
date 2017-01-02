@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <string.h>
+#include <signal.h>
 #include "tchatche.h"
 #include "packet_reception.h"
 #include "tui.h"
@@ -276,6 +277,9 @@ main(int argc, char *argv[])
         error_exit(log_path);
     logs_start(log_file, "");
     */
+
+    if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+        perror("signal");
 
     /* Init client */
     cl = client_init();

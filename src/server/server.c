@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <dirent.h>
+#include <signal.h>
 
 #include "server.h"
 #include "request.h"
@@ -121,6 +122,9 @@ main(int argc, char *argv[])
 
 	if (daemonize && daemon(0, 0) == -1)
 		error_exit("daemon");
+
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		perror("signal");
 
 	serv = server_init();
 	while (true) {

@@ -1,8 +1,10 @@
 #include "user.h"
+#include "server.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 user *
 user_create(user_id id, char *nick, char *path, int pipe)
@@ -93,15 +95,34 @@ user_from_pipe_path(arlist *list, char *path)
     return NULL;
 }
 
+static void
+remove_user(user *u)
+{
+    arlist_remove(serv->users, index_of(serv->users, compare_users, u));
+    char *path = strdup(u->path);
+    user_destroy(u);
+    unlink(path);
+    free(path);
+}
+
 ssize_t
 send_to(user *u, data d)
 {
-    return writedata(u->pipe, d);
+    ssize_t ret;
+    if ((ret = writedata(u->pipe, d)) == -1 && errno == EPIPE)
+        remove_user(u);
+    return ret;
 }
 
 void
 broadcast(arlist *list, data d)
 {
-    for (size_t i=0; i<arlist_size(list); i++)
-        send_to(arlist_get(list,i), d);
+    user *u;
+    for (size_t i=0; i<arlist_size(list); i++) {
+        u = arlist_get(list, i);
+        if (writedata(u->pipe, d) == -1 && errno == EPIPE) { /* closed pipe */
+            remove_user(u);
+            --i;
+        }
+    }
 }

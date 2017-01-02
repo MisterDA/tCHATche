@@ -128,3 +128,13 @@ arlist_remove(arlist *l, size_t n)
     --(l->size);
     return e;
 }
+
+size_t
+index_of(arlist *l, int (*cmp)(const void *, const void *), void *e)
+{
+    /* TODO: optimize with binary search */
+    for (size_t i = 0; i < l->size; ++i)
+        if (cmp(e, l->elements[i]) == 0)
+            return i;
+    return SIZE_MAX;
+}
