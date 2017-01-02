@@ -9,14 +9,11 @@
 #include "request.h"
 #include "tchatche.h"
 
-#include <stdio.h> //DEV
-#include <unistd.h> //DEV
-
 int
 pro_client_HELO(char *nick, char *path)
 {
 	int pipe;
-	printf("HELO from {nick: \"%s\"; path: \"%s\"}\n", nick, path); //DEV
+	logs("HELO from {nick: \"%s\"; path: \"%s\"}\n", nick, path);
 	if ((pipe = open(path, O_WRONLY)) == -1)
 		return 0; /* can't send BADD because there is no pipe */
 	if (!is_valid_cred(serv->users, nick, path))
@@ -27,12 +24,12 @@ pro_client_HELO(char *nick, char *path)
 	user *u = user_create(id, nick, path, pipe);
 	arlist_add(serv->users, compare_users, u);
 	send_to(u, req_server_OKOK(id));
-	printf("Added {nick: \"%s\"; id: %d; path: \"%s\"; pipe: \"%d\"}\n",
-			nick, id, path, pipe); //DEV
+	logs("Added {nick: \"%s\"; id: %d; path: \"%s\"; pipe: \"%d\"}\n",
+			nick, id, path, pipe);
 	return 0;
 
 	badd:
-	printf("Refused {nick: \"%s\"; path: \"%s\"}\n", nick, path); //DEV
+	logs("Refused {nick: \"%s\"; path: \"%s\"}\n", nick, path);
 	writedata(pipe, req_server_BADD());
 	return 0;
 }
@@ -64,8 +61,7 @@ pro_client_BCST(uint32_t id, char *msg, size_t msglen)
 	char time_buf[6];
 	time_t t = time(NULL);
 	strftime(time_buf, 6, "%H:%M", localtime(&t));
-	printf("%s <%u:%s> [%zu] ", time_buf, id, u->nick, msglen); //DEV
-	fflush(stdout); write(1,msg,msglen); printf("\n"); //DEV
+	logs("%s <%u:%s> [%zu] %s\n", time_buf, id, u->nick, msglen, msg);
 	broadcast(serv->users, req_server_BCST(u->nick, msg, msglen));
 	return 0;
 }
@@ -79,8 +75,7 @@ pro_client_PRVT(uint32_t id, char *nick, char *msg, size_t msglen)
 	char time_buf[6];
 	time_t t = time(NULL);
 	strftime(time_buf, 6, "%H:%M", localtime(&t));
-	printf("%s <%u:%s->%s> [%zu] ", time_buf, id, u->nick, nick, msglen); //DEV
-	fflush(stdout); write(1,msg,msglen); printf("\n"); //DEV
+	logs("%s <%u:%s->%s> [%zu] %s\n", time_buf, id, u->nick, nick, msglen, msg);
 	if (cl)
 		send_to(cl, req_server_PRVT(u->nick, msg, msglen));
 	else
@@ -107,8 +102,8 @@ pro_client_SHUT(uint32_t id, char *password)
 	/* TODO: deal with the password */
 	user *u = user_from_id(serv->users, id);
 	//FIXME u==NULL ?
-	printf("SHUT from {id: \"%u\"; nick: \"%s\"; pwd: \"%s\"}\n",
-			id, u->nick, password); //DEV
+	logs("SHUT from {id: \"%u\"; nick: \"%s\"; pwd: \"%s\"}\n",
+		id, u->nick, password);
 	broadcast(serv->users, req_server_SHUT(u->nick));
 	server_end(serv);
 	exit(EXIT_SUCCESS);

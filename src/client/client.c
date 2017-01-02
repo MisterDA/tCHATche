@@ -269,6 +269,14 @@ main(int argc, char *argv[])
 {
     setlocale(LC_ALL, "");
 
+    /*
+    char *log_path = "/dev/pts/2";
+    FILE *log_file;
+    if ((log_file = fopen(log_path, "a")) == NULL)
+        error_exit(log_path);
+    logs_start(log_file, "");
+    */
+
     /* Init client */
     cl = client_init();
     options_handler(argc, argv, cl);
@@ -345,5 +353,6 @@ main(int argc, char *argv[])
     }
 
     client_end(cl);
+    /* logs_end(); */
     return EXIT_SUCCESS;
 }

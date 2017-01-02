@@ -22,8 +22,8 @@
 
 #define MAX_REQUEST_LENGTH MAX_NUM
 
-#define DBG(h) do{ printf("[" #h "]\n"); fflush(stdout); }while(0)
-#define DBGINT(i) do{ printf("[%d]\n", (i)); fflush(stdout); }while(0)
+#define DBG(h) do{ logs("[" #h "]\n"); }while(0)
+#define DBGINT(i) do{ logs("[%d]\n", (i)); }while(0)
 
 typedef char type[SIZEOF_TYPE];
 

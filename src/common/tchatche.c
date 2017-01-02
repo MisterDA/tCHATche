@@ -55,12 +55,12 @@ char *mktmpfifo_server(void)
 static FILE *log_file = NULL;
 static const char *log_motd = "";
 
-void logs_start(char *path, const char *motd) {
+void logs_start(FILE *file, const char *motd) {
     if (log_file) {
         fputs("Logging had already started", stderr);
         exit(EXIT_FAILURE);
-    } else if ((log_file = fopen(path, "a")) == NULL) {
-        error_exit(path);
+    } else if (file) {
+        log_file = file;
     }
     fflush(log_file);
     log_motd = motd;

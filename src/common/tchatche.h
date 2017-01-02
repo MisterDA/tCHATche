@@ -2,6 +2,7 @@
 #define TCHATCHE_H
 
 #include <stdarg.h>
+#include <stdio.h>
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
@@ -14,9 +15,7 @@
 char *mktmpfifo_client(void);
 char *mktmpfifo_server(void);
 
-
-#define LOG_FILE "/dev/pts/2"
-void logs_start(char *path, const char *motd);
+void logs_start(FILE *file, const char *motd);
 void logs(const char *fmt, ...);
 void logs_end(void);
 
