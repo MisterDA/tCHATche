@@ -22,7 +22,7 @@
 #include "packet.h"
 
 #define INIT(d) \
-	data buf_ = {BUFFER, sizeof BUFFER / sizeof *BUFFER}; \
+	data buf_ = mem2data(NULL, BUFFER, sizeof BUFFER / sizeof *BUFFER); \
 	data d = buf_; \
 	int err_ = 0; \
 	DO shift_data(&d, SIZEOF_NUM);
