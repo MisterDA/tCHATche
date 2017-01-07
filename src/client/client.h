@@ -1,8 +1,24 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#include <stdio.h>
 #include <stdbool.h>
+#include "arraylist.h"
 #include "tui.h"
+
+typedef struct {
+    uint32_t id;
+    uint32_t series;
+    uint32_t len;
+    char *filename;
+    char *nick;
+
+    FILE *out;
+} transfer;
+
+transfer *transfer_from_id(arlist *list, uint32_t id);
+int compare_transfers(const void *a, const void *b);
+void destroy_transfer(void *e);
 
 typedef struct {
     int server_pipe, client_pipe;
@@ -12,6 +28,9 @@ typedef struct {
     bool has_id;
     uint32_t id;
     char *nick;
+
+    transfer *upload;
+    arlist *downloads;
 } client;
 
 extern client *cl;

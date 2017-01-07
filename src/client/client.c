@@ -10,6 +10,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <signal.h>
+#include <errno.h>
 #include "tchatche.h"
 #include "packet_reception.h"
 #include "tui.h"
@@ -33,6 +34,14 @@ static cmd_tok cmd_toks[] = {
     {CMD_SHUT, "shut", "/shut <pwd>     shut down the server"},
 };
 
+static off_t
+fsize(const char *filename) {
+    struct stat st;
+    if (stat(filename, &st) == 0)
+        return st.st_size;
+    return -1;
+}
+
 /* Client init functions */
 
 client *
@@ -45,6 +54,8 @@ client_init(void)
     cl->has_id = false;
     cl->id = 9999 + 1;
     cl->nick = NULL;
+    cl->upload = NULL;
+    cl->downloads = arlist_create();
     return cl;
 }
 
@@ -57,6 +68,7 @@ client_end(client *cl)
     free(cl->client_path);
     free(cl->nick);
     client_end_tui(cl);
+    arlist_destroy(cl->downloads, destroy_transfer);
     free(cl);
 }
 
@@ -97,6 +109,34 @@ client_end_tui(client *cl)
 {
     tui_end(cl->ui);
     tui_end_curses();
+}
+
+transfer *
+transfer_from_id(arlist *list, uint32_t id)
+{
+    for (size_t i=0; i<arlist_size(list); i++) {
+        transfer *t = arlist_get(list,i);
+        if (t->id==id)
+            return t;
+    }
+    return NULL;
+}
+
+int
+compare_transfers(const void *a, const void *b)
+{
+    const transfer *ta = (const transfer *) a;
+    const transfer *tb = (const transfer *) b;
+    return (ta->id > tb->id) - (ta->id < tb->id);
+}
+
+void
+destroy_transfer(void *e)
+{
+    transfer *t = (transfer *)e;
+    free(t->filename);
+    free(t->nick);
+    free(t);
 }
 
 
@@ -182,9 +222,43 @@ exec_command(client *cl, char *buf, size_t len)
     case CMD_QUIT:
         writedata(cl->server_pipe, req_client_BYEE(cl->id));
         break;
-    case CMD_SEND:
-        /* TODO */
+    case CMD_SEND: {
+        char *nick_end = strchrnul(cmd_txt_end + 1, ' ');
+        size_t nick_len = nick_end - cmd_txt_end;
+        if (*nick_end == '\0' || nick_len + cmd_len >= len) {
+            tui_add_txt(cl->ui, invalid_cmd);
+            break;
+        }
+        *nick_end = '\0';
+        char *path = nick_end + 1;
+        if (access(path, R_OK)) {
+            tui_print_txt(cl->ui, "Invalid path: %s", strerror(errno));
+            break;
+        }
+        off_t len = fsize(nick_end + 1);
+        if (len < 0 ) {
+            tui_add_txt(cl->ui, "Invalid file length.");
+            break;
+        } else if (len == 0) {
+            tui_add_txt(cl->ui, "Empty file.");
+            break;
+        } else if ((uint32_t)len > 0xffffffffU) {
+            tui_add_txt(cl->ui, "The file is too big to be send.");
+            break;
+        }
+
+        transfer *t = malloc(sizeof(*t));
+        t->id = 0;
+        t->series = 0;
+        t->len = len;
+        t->filename = strdup(basename(nick_end + 1));
+        t->nick = strdup(cmd_txt_end + 1);
+        cl->upload = t;
+
+        writedata(cl->server_pipe,
+            req_client_FILE_announce(cl->id, t->nick, t->len, t->filename));
         break;
+    }
     case CMD_SHUT:
         writedata(cl->server_pipe, req_client_SHUT(cl->id, ""));
         break;

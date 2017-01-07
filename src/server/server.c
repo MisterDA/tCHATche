@@ -48,6 +48,7 @@ server_init(void)
 	serv->path = mktmpfifo_server();
 	serv->pipe = open(serv->path, O_RDWR);
 	serv->symlink_created = !symlink(basename(serv->path), "/tmp/tchatche/server");
+	serv->transfers = arlist_create();
 	return serv;
 }
 
@@ -55,6 +56,7 @@ void
 server_end(server *serv)
 {
 	arlist_destroy(serv->users, user_destroy);
+	arlist_destroy(serv->transfers, free);
 	close(serv->pipe);
 	unlink(serv->path);
 	if (serv->symlink_created)
@@ -65,6 +67,41 @@ server_end(server *serv)
 		unlink("/tmp/tchatche");
 }
 
+transfer *
+transfer_from_id(arlist *list, uint32_t id)
+{
+    for (size_t i=0; i<arlist_size(list); i++) {
+        transfer *t = arlist_get(list,i);
+        if (t->id==id)
+            return t;
+    }
+    return NULL;
+}
+
+uint32_t
+get_available_transfer_id(arlist *list)
+{
+    if (arlist_size(list) == 0)
+        return 0;
+    transfer *t1 = (transfer *) arlist_get(list, 0);
+    transfer *t2 = t1;
+    for (size_t i = 1; i < arlist_size(list); ++i) {
+        t2 = (transfer *) arlist_get(list, i);
+        if (t1->id + 1 != t2->id) {
+            t2 = t1;
+            break;
+        }
+    }
+    return t2->id + 1;
+}
+
+int
+compare_transfers(const void *a, const void *b)
+{
+    const transfer *ta = (const transfer *) a;
+    const transfer *tb = (const transfer *) b;
+    return (ta->id > tb->id) - (ta->id < tb->id);
+}
 
 static void
 options_handler(int argc, char *argv[])

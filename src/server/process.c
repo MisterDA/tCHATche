@@ -101,20 +101,21 @@ pro_client_SHUT(uint32_t id, char *password)
 {
 	/* TODO: deal with the password */
 	user *u = user_from_id(serv->users, id);
-	//FIXME u==NULL ?
-	logs("SHUT from {id: \"%u\"; nick: \"%s\"; pwd: \"%s\"}\n",
-		id, u->nick, password);
-	broadcast(serv->users, req_server_SHUT(u->nick));
+	if (u) {
+		logs("SHUT from {id: \"%u\"; nick: \"%s\"; passwd: \"%s\"}\n",
+			id, u->nick, password);
+		broadcast(serv->users, req_server_SHUT(u->nick));
+	} else {
+		logs("SHUT\n");
+		broadcast(serv->users, req_server_SHUT(NULL));
+	}
 	server_end(serv);
 	exit(EXIT_SUCCESS);
 	return 0;
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-
 int
-pro_client_DEBG(char *password)
+pro_client_DEBG(char *password __attribute__ ((unusued)))
 {
 	//TODO do something (!)
 	return 0;
@@ -123,15 +124,36 @@ pro_client_DEBG(char *password)
 int
 pro_client_FILE_announce(uint32_t id, char *nick, uint32_t len, char *filename)
 {
-	//TODO a lot of things
+	logs("FILE announce: {id: \"%u\"; nick: \"%s\"; len: \"%d\"; filename: \"%s\"}\n",
+		id, nick, len, filename);
+	user *sender = user_from_id(serv->users, id);
+	user *receiver = user_from_nick(serv->users, nick);
+	if (sender == NULL) return -1;
+	if (receiver == NULL || sender == receiver) {
+		send_to(sender, req_server_BADD());
+		return 0;
+	}
+
+	transfer *t = malloc(sizeof(*t));
+	t->id = get_available_transfer_id(serv->transfers);
+	t->sender = sender;
+	t->receiver = receiver;
+	t->len = len;
+	arlist_add(serv->transfers, compare_transfers, t);
+
+	send_to(receiver, req_server_FILE_announce(t->id, len, filename, sender->nick));
+	send_to(sender, req_server_OKOK(t->id));
 	return 0;
 }
 
 int
 pro_client_FILE_transfer(uint32_t serie, uint32_t idtransfer, data buf)
 {
-	//TODO same here
+	logs("FILE transfert: {id: \"%u\"; serie: \"%u\"}\n", idtransfer, serie);
+	transfer *t = transfer_from_id(serv->transfers, idtransfer);
+	if (!t) return -1;
+	send_to(t->receiver, req_server_FILE_transfer(serie, idtransfer, buf));
+	if (serie * 256 >= t->len)
+		arlist_remove(serv->transfers, index_of(serv->transfers, compare_transfers, t));
 	return 0;
 }
-
-#pragma GCC diagnostic pop
