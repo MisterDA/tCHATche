@@ -152,6 +152,26 @@ command_tok(char *buf)
     return NULL; /* CMD_UNKNOWN */
 }
 
+
+static void
+exec_command_HELP(client *cl, char *buf, size_t len) {
+	if (!buf[0]) {
+        for (size_t i = 0; i < array_size(cmd_toks); ++i) {
+            tui_add_txt(cl->ui, cmd_toks[i].help_txt);
+        }
+        return;
+    } else {
+        for (size_t i = 0; i < array_size(cmd_toks); ++i) {
+            if (strcmp(buf + 1, cmd_toks[i].txt) == 0) {
+                tui_add_txt(cl->ui, cmd_toks[i].help_txt);
+                tui_clear_field(cl->ui);
+                return;
+            }
+        }
+    }
+    tui_add_txt(cl->ui, invalid_cmd);
+}
+
 void
 exec_command(client *cl, char *buf, size_t len)
 {
@@ -173,97 +193,110 @@ exec_command(client *cl, char *buf, size_t len)
         buf = cmd_txt_end;
         if (!was_null) buf[0] = ' ';
     }
+	
+	
+	if (!cl->has_id) {
+		
+		switch (cmd.cmd) {
+		case CMD_HELP: {
+		    exec_command_HELP(cl, buf, len);
+		    break;
+		}
+		case CMD_NICK: {
+		    cl->nick = strdup(buf+1); //FIXME: no arguments
+		    writedata(cl->server_pipe, req_client_HELO(buf+1, cl->client_path));
+		    //TODO: wrong nick
+		    break;
+		}
+		case CMD_QUIT: {
+		    //TODO: like ctrl-D
+		    tui_add_txt(cl->ui, "TODO: \"/quit\" when nick not set");
+		    break;
+		}
+		default:
+			tui_print_txt(cl->ui, "%s Use \"/nick\" first.", invalid_cmd);
+		}
+		
+	} else {
+		
+		switch (cmd.cmd) {
+		case CMD_HELP: {
+		    exec_command_HELP(cl, buf, len);
+		    break;
+		}
+		case CMD_DEBG: {
+		    writedata(cl->server_pipe, req_client_DEBG(NULL));
+		    break;
+		}
+		case CMD_WHO:
+		    writedata(cl->server_pipe, req_client_LIST(cl->id));
+		    break;
+		case CMD_MSG: {
+		    char *nick_end = strchrnul(cmd_txt_end + 1, ' ');
+		    size_t nick_len = nick_end - cmd_txt_end;
+		    if (*nick_end == '\0' || nick_len + cmd_len >= len) {
+		        tui_add_txt(cl->ui, invalid_cmd);
+		        break;
+		    }
+		    *nick_end = '\0';
+		    writedata(cl->server_pipe,
+		              req_client_PRVT(cl->id, cmd_txt_end + 1, nick_end + 1, len));
+		    break;
+		}
+		case CMD_NICK: {
+			tui_print_txt(cl->ui, "%s You already have a nick !", invalid_cmd);
+		    break;
+		}
+		case CMD_QUIT: {
+		    writedata(cl->server_pipe, req_client_BYEE(cl->id));
+		    break;
+		}
+		case CMD_SEND: {
+		    char *nick_end = strchrnul(cmd_txt_end + 1, ' ');
+		    size_t nick_len = nick_end - cmd_txt_end;
+		    if (*nick_end == '\0' || nick_len + cmd_len >= len) {
+		        tui_add_txt(cl->ui, invalid_cmd);
+		        break;
+		    }
+		    *nick_end = '\0';
+		    char *path = nick_end + 1;
+		    if (access(path, R_OK)) {
+		        tui_print_txt(cl->ui, "Invalid path: %s", strerror(errno));
+		        break;
+		    }
+		    off_t len = fsize(nick_end + 1);
+		    if (len < 0 ) {
+		        tui_add_txt(cl->ui, "Invalid file length.");
+		        break;
+		    } else if (len == 0) {
+		        tui_add_txt(cl->ui, "Empty file.");
+		        break;
+		    } else if ((uint32_t)len > 0xffffffffU) {
+		        tui_add_txt(cl->ui, "The file is too big to be send.");
+		        break;
+		    }
 
-    switch (cmd.cmd) {
-    case CMD_DEBG:
-        writedata(cl->server_pipe, req_client_DEBG(NULL));
-        break;
-    case CMD_HELP: {
-        if (!buf[0]) {
-            for (size_t i = 0; i < array_size(cmd_toks); ++i) {
-                tui_add_txt(cl->ui, cmd_toks[i].help_txt);
-            }
-            return;
-        } else {
-            for (size_t i = 0; i < array_size(cmd_toks); ++i) {
-                if (strcmp(buf + 1, cmd_toks[i].txt) == 0) {
-                    tui_add_txt(cl->ui, cmd_toks[i].help_txt);
-                    tui_clear_field(cl->ui);
-                    return;
-                }
-            }
-        }
-        tui_add_txt(cl->ui, invalid_cmd);
-        break;
-    }
-    case CMD_WHO:
-        writedata(cl->server_pipe, req_client_LIST(cl->id));
-        break;
-    case CMD_MSG: {
-        char *nick_end = strchrnul(cmd_txt_end + 1, ' ');
-        size_t nick_len = nick_end - cmd_txt_end;
-        if (*nick_end == '\0' || nick_len + cmd_len >= len) {
-            tui_add_txt(cl->ui, invalid_cmd);
-            break;
-        }
-        *nick_end = '\0';
-        writedata(cl->server_pipe,
-                  req_client_PRVT(cl->id, cmd_txt_end + 1, nick_end + 1, len));
-        break;
-    }
-    case CMD_NICK: {
-        if (cl->has_id) {
-            tui_add_txt(cl->ui, "You already have a nick !");
-        } else {
-            cl->nick = strdup(buf+1);
-            writedata(cl->server_pipe, req_client_HELO(buf+1, cl->client_path));
-        }
-        break;
-    }
-    case CMD_QUIT:
-        writedata(cl->server_pipe, req_client_BYEE(cl->id));
-        break;
-    case CMD_SEND: {
-        char *nick_end = strchrnul(cmd_txt_end + 1, ' ');
-        size_t nick_len = nick_end - cmd_txt_end;
-        if (*nick_end == '\0' || nick_len + cmd_len >= len) {
-            tui_add_txt(cl->ui, invalid_cmd);
-            break;
-        }
-        *nick_end = '\0';
-        char *path = nick_end + 1;
-        if (access(path, R_OK)) {
-            tui_print_txt(cl->ui, "Invalid path: %s", strerror(errno));
-            break;
-        }
-        off_t len = fsize(nick_end + 1);
-        if (len < 0 ) {
-            tui_add_txt(cl->ui, "Invalid file length.");
-            break;
-        } else if (len == 0) {
-            tui_add_txt(cl->ui, "Empty file.");
-            break;
-        } else if ((uint32_t)len > 0xffffffffU) {
-            tui_add_txt(cl->ui, "The file is too big to be send.");
-            break;
-        }
+		    transfer *t = malloc(sizeof(*t));
+		    t->id = 0;
+		    t->series = 0;
+		    t->len = len;
+		    t->filename = strdup(basename(nick_end + 1));
+		    t->nick = strdup(cmd_txt_end + 1);
+		    cl->upload = t;
 
-        transfer *t = malloc(sizeof(*t));
-        t->id = 0;
-        t->series = 0;
-        t->len = len;
-        t->filename = strdup(basename(nick_end + 1));
-        t->nick = strdup(cmd_txt_end + 1);
-        cl->upload = t;
-
-        writedata(cl->server_pipe,
-            req_client_FILE_announce(cl->id, t->nick, t->len, t->filename));
-        break;
-    }
-    case CMD_SHUT:
-        writedata(cl->server_pipe, req_client_SHUT(cl->id, ""));
-        break;
-    }
+		    writedata(cl->server_pipe,
+		        req_client_FILE_announce(cl->id, t->nick, t->len, t->filename));
+		    break;
+		}
+		case CMD_SHUT: {
+		    writedata(cl->server_pipe, req_client_SHUT(cl->id, ""));
+		    break;
+		}
+		default:
+			tui_print_txt(cl->ui, "%s Already connected.", invalid_cmd);
+		}
+	
+	}
 }
 
 void input_handler(client *cl, char *buf, size_t len) {
@@ -398,6 +431,7 @@ main(int argc, char *argv[])
             form_driver(ui->form, REQ_NEXT_CHAR);
             break;
         case '\177': /* DEL */
+        case KEY_BACKSPACE:
             form_driver(ui->form, REQ_DEL_PREV);
             if (data_behind(ui->form)) {
                 if (getcurx(ui->input) > 0) {
@@ -413,6 +447,7 @@ main(int argc, char *argv[])
             break;
         case '\004': /* EOT - Ctrl-D */
             run = false;
+            //writedata(cl->server_pipe, req_client_BYEE(cl->id));
             break;
         case '\r':
         case '\n': {
