@@ -1,3 +1,5 @@
+#include "tchatche.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -6,7 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
-#include "tchatche.h"
+
 
 /* To create a temporary named pipe, we have to create a temporary file with
  * mkstemp, close and remove it, and use mkfifo on the generated name.

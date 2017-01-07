@@ -4,7 +4,6 @@
 #include "process.h"
 #include "packet.h"
 
-#include "tchatche.h" //DEV -> logs()
 
 #define HELO TYPE('H','E','L','O')
 #define BYEE TYPE('B','Y','E','E')
@@ -111,4 +110,3 @@ process_packet(data d)
 		default: return ERR_UNKNOWN;
 	}
 }
-

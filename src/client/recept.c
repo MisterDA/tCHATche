@@ -1,10 +1,7 @@
 /* CLIENT */
 #include "packet_reception.h"
-
 #include "process.h"
 #include "packet.h"
-
-#include "client.h"//DEV
 
 #define OKOK TYPE('O','K','O','K')
 #define BADD TYPE('B','A','D','D')

@@ -1,3 +1,5 @@
+#include "client.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -15,7 +17,6 @@
 #include "packet_reception.h"
 #include "tui.h"
 #include "request.h"
-#include "client.h"
 
 
 client *cl = NULL;

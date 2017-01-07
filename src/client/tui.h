@@ -1,7 +1,6 @@
 #ifndef TUI_H
 #define TUI_H
 
-#include <ncurses.h>
 #include <form.h>
 #include <time.h>
 #include <stdarg.h>

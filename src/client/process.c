@@ -1,14 +1,12 @@
 #include "process.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
 #include "client.h"
 #include "request.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h> //DEV
-#include <unistd.h> //DEV
-#include <errno.h>
-#include "tchatche.h"
 
 static void
 send_file(transfer *t)

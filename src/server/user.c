@@ -1,10 +1,11 @@
 #include "user.h"
-#include "server.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include "server.h"
+
 
 user *
 user_create(user_id id, char *nick, char *path, int pipe)

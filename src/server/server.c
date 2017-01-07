@@ -1,8 +1,8 @@
+#include "server.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <locale.h>
-#include "tchatche.h"
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -14,10 +14,11 @@
 #include <dirent.h>
 #include <signal.h>
 
-#include "server.h"
+#include "tchatche.h"
 #include "request.h"
 #include "packet_reception.h"
 #include "user.h"
+
 
 server *serv = NULL;
 static bool daemonize = false;

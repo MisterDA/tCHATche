@@ -1,6 +1,7 @@
+#include "tui.h"
+
 #include <stdlib.h>
 #include <string.h>
-#include "tui.h"
 #include "arraylist.h"
 
 void
