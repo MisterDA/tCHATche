@@ -45,7 +45,12 @@ pro_server_OKOK(uint32_t id)
 int
 pro_server_BADD()
 {
-	tui_add_txt(cl->ui, "Invalid nickname.\n");
+	if (!cl->has_id) { /* connection */
+		tui_add_txt(cl->ui, "Invalid nickname.\n");
+	} else { /* file transfer */
+		tui_add_txt(cl->ui, "The file tranfer was rejected.");
+		destroy_transfer(cl->upload);
+	}
 	return 0;
 }
 
