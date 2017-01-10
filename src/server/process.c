@@ -116,7 +116,7 @@ pro_client_SHUT(uint32_t id, char *password)
 }
 
 int
-pro_client_DEBG(char *password __attribute__ ((unusued)))
+pro_client_DEBG(char *password)
 {
 	//TODO do something (!)
 	return 0;

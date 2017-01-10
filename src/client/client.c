@@ -193,10 +193,10 @@ exec_command(client *cl, char *buf, size_t len)
         buf = cmd_txt_end;
         if (!was_null) buf[0] = ' ';
     }
-	
-	
+
+
 	if (!cl->has_id) {
-		
+
 		switch (cmd.cmd) {
 		case CMD_HELP: {
 		    exec_command_HELP(cl, buf, len);
@@ -216,9 +216,9 @@ exec_command(client *cl, char *buf, size_t len)
 		default:
 			tui_print_txt(cl->ui, "%s Use \"/nick\" first.", invalid_cmd);
 		}
-		
+
 	} else {
-		
+
 		switch (cmd.cmd) {
 		case CMD_HELP: {
 		    exec_command_HELP(cl, buf, len);
@@ -271,7 +271,7 @@ exec_command(client *cl, char *buf, size_t len)
 		    } else if (len == 0) {
 		        tui_add_txt(cl->ui, "Empty file.");
 		        break;
-		    } else if ((uint32_t)len > 0xffffffffU) {
+		    } else if ((uint32_t)len > 9999u * 256u) {
 		        tui_add_txt(cl->ui, "The file is too big to be send.");
 		        break;
 		    }
@@ -295,7 +295,7 @@ exec_command(client *cl, char *buf, size_t len)
 		default:
 			tui_print_txt(cl->ui, "%s Already connected.", invalid_cmd);
 		}
-	
+
 	}
 }
 
@@ -356,7 +356,7 @@ options_handler(int argc, char *argv[], client *cl)
     }
 
     if (optind == argc) {
-        cl->server_path = "/tmp/tchatche/server";
+        cl->server_path = "/tmp/tCHATche/server";
     } else if (optind == argc - 1) {
         cl->server_path = argv[optind];
     } else {
@@ -404,7 +404,7 @@ main(int argc, char *argv[])
         ch = wgetch(ui->input);
 
         /* Packet handler */
-        int rp = read_packet(cl->client_pipe, true);
+        read_packet(cl->client_pipe, true);
         tui_refresh(ui);
 
         /* Input handler */
@@ -419,7 +419,7 @@ main(int argc, char *argv[])
             }
             break;
         case KEY_DOWN:
-            if (ui->chat_row < getmaxy(ui->chat) - getmaxy(stdscr) - 1) {
+            if (ui->chat_row < getmaxy(ui->chat) - getmaxy(stdscr) + 2) {
                 ++(ui->chat_row);
                 tui_refresh(ui);
             }

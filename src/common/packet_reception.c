@@ -1,10 +1,6 @@
 #include "packet_reception.h"
 
-/*
 #include <unistd.h>
-#include <stdio.h> //DEV
-#include "packet.h" //DEV
-*/
 
 static char buffer[MAX_REQUEST_LENGTH];
 static uint32_t c = 0;

@@ -45,7 +45,6 @@ shift_data(data *d, size_t shift)
 char *
 datacpy(data *dest, const data *src)
 {
-	if (!src) return datancpy(dest, src, 0);
 	return datancpy(dest, src, src->length);
 }
 
@@ -104,7 +103,7 @@ data *
 memtodata(data *d,const char *mem,  size_t length)
 {
 	if (!d)
-		if (!(d = malloc(sizeof d))) goto err0;
+		if (!(d = malloc(sizeof *d))) goto err0;
 	data src = mem2data(NULL, (char *)mem, length);
 	if (! malloc_datacpy(d, &src) ) goto err1;
 	return d;
@@ -125,7 +124,7 @@ datatostr(const data *d, char *str, size_t len)
 	if (!str) {
 	    if (!len) len = d->length+1;
 	    else if (d->length>=len) goto err0;
-	    str = malloc(len*sizeof str);
+	    str = malloc(len);
 	} else if (d->length>=len) goto err1;
 	strncpy(str, d->ata, d->length);
 	strncpy(str+d->length, "", len-d->length);
@@ -141,4 +140,3 @@ writedata(int fd, const data d)
 {
 	return write(fd, d.ata, d.length);
 }
-

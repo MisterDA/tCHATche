@@ -19,7 +19,7 @@ static char *mktmpfifo(char *path)
     int file, ret, i = 0;
     do {
         mode_t omode = umask(0);
-        if (mkdir("/tmp/tchatche/", 0777))
+        if (mkdir("/tmp/tCHATche/", 0777))
             if (errno != EEXIST)
                 error_exit("mkdir");
         if ((file = mkstemp(path)) == -1)
@@ -39,17 +39,17 @@ static char *mktmpfifo(char *path)
 
 char *mktmpfifo_client(void)
 {
-    size_t len = sizeof("/tmp/tchatche/client-XXXXXX");
+    size_t len = sizeof("/tmp/tCHATche/client-XXXXXX");
     char *p = malloc(len);
-    memcpy(p, "/tmp/tchatche/client-XXXXXX", len);
+    memcpy(p, "/tmp/tCHATche/client-XXXXXX", len);
     return mktmpfifo(p);
 }
 
 char *mktmpfifo_server(void)
 {
-    size_t len = sizeof("/tmp/tchatche/server-XXXXXX");
+    size_t len = sizeof("/tmp/tCHATche/server-XXXXXX");
     char *p = malloc(len);
-    memcpy(p, "/tmp/tchatche/server-XXXXXX", len);
+    memcpy(p, "/tmp/tCHATche/server-XXXXXX", len);
     return mktmpfifo(p);
 }
 

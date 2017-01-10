@@ -48,7 +48,7 @@ server_init(void)
 	serv->users = arlist_create();
 	serv->path = mktmpfifo_server();
 	serv->pipe = open(serv->path, O_RDWR);
-	serv->symlink_created = !symlink(basename(serv->path), "/tmp/tchatche/server");
+	serv->symlink_created = !symlink(basename(serv->path), "/tmp/tCHATche/server");
 	serv->transfers = arlist_create();
 	return serv;
 }
@@ -61,11 +61,11 @@ server_end(server *serv)
 	close(serv->pipe);
 	unlink(serv->path);
 	if (serv->symlink_created)
-		unlink("/tmp/tchatche/server");
+		unlink("/tmp/tCHATche/server");
 	free(serv->path);
 	free(serv);
-	if (dir_is_empty("/tmp/tchatche"))
-		unlink("/tmp/tchatche");
+	if (dir_is_empty("/tmp/tCHATche"))
+		unlink("/tmp/tCHATche");
 }
 
 transfer *

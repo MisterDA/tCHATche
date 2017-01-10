@@ -5,7 +5,7 @@
 #     clean
 
 CC=gcc
-CFLAGS=-Wall -Wextra -std=c11 -Og -ggdb -Isrc/client -Isrc/server -Isrc/common \
+CFLAGS=-Wall -std=c11 -g -Isrc/client -Isrc/server -Isrc/common \
        -D_GNU_SOURCE -D_XOPEN_SOURCE
 LDFLAGS=
 LDFLAGS_CLIENT=$(LDFLAGS) -lform -lncurses

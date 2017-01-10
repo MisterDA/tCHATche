@@ -102,15 +102,18 @@ int
 pro_server_FILE_announce(uint32_t intransfert, uint32_t len, char *filename,
 	char *nick)
 {
-	tui_print_txt(cl->ui, "Receiving file \"%s\" [%u] from <%s>...",
-		filename, len, nick);
+	if (nick)
+		tui_print_txt(cl->ui, "Receiving file \"%s\" [%u] from <%s>...",
+			filename, len, nick);
+	else
+		tui_print_txt(cl->ui, "Receiving file \"%s\" [%u]...", filename, len);
 
 	transfer *t = malloc(sizeof(*t));
 	t->id = intransfert;
 	t->series = 0;
 	t->len = len;
 	t->filename = strdup(filename);
-	t->nick = strdup(nick);
+	t->nick = nick ? strdup(nick) : NULL;
 
 	if (!access(t->filename, F_OK)) {
 		tui_add_txt(cl->ui, "Refused: file already exists.");
@@ -138,6 +141,7 @@ pro_server_FILE_transfer(uint32_t serie, uint32_t idtransfer, data buf)
 		tui_print_txt(cl->ui, "Error while writing %u : %s", t->id, strerror(errno));
 		return -1;
 	}
+	fflush(t->out);
 	if (++(t->series) * 256 >= t->len) {
 		tui_print_txt(cl->ui, "End of \"%s\" transfer.", t->filename);
 		fclose(t->out);
