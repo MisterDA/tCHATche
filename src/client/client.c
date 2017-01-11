@@ -32,7 +32,7 @@ static cmd_tok cmd_toks[] = {
     {CMD_NICK, "nick", "/nick <nick>    set your nickname"},
     {CMD_QUIT, "quit", "/quit           quit tCHATche client"},
     {CMD_SEND, "send", "/send <nick> <file> send a file"},
-    {CMD_SHUT, "shut", "/shut <pwd>     shut down the server"},
+    {CMD_SHUT, "shut", "/shut [pwd]     shut down the server"},
 };
 
 static off_t
@@ -203,8 +203,12 @@ exec_command(client *cl, char *buf, size_t len)
 		    break;
 		}
 		case CMD_NICK: {
-		    cl->nick = strdup(buf+1); //FIXME: no arguments
-		    //TODO: wrong nick
+			if (cmd_len >= len) {
+				tui_add_txt(cl->ui, invalid_cmd);
+		        break;
+		    }
+			free(cl->nick);
+		    cl->nick = strdup(buf+1);
 		    writedata(cl->server_pipe, req_client_HELO(buf+1, cl->client_path));
 		    break;
 		}
@@ -290,8 +294,11 @@ exec_command(client *cl, char *buf, size_t len)
 		    break;
 		}
 		case CMD_SHUT: {
-		    writedata(cl->server_pipe, req_client_SHUT(cl->id, ""));
-		    break;
+			if (cmd_len >= len)
+				writedata(cl->server_pipe, req_client_SHUT(cl->id, NULL));
+			else
+				writedata(cl->server_pipe, req_client_SHUT(cl->id, buf+1));
+			break;
 		}
 		default:
 			tui_print_txt(cl->ui, "%s Already connected.", invalid_cmd);
