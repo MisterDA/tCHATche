@@ -1,6 +1,10 @@
 /* SERVER */
 #include "packet_reception.h"
 
+
+#include <stdlib.h>
+#include "tchatche.h"
+
 #include "process.h"
 #include "packet.h"
 
@@ -23,14 +27,16 @@
 int
 process_packet(data d)
 {
+	char *temp = datatostr(&d, NULL, 0);
+	logs("\x1B[0;1;35m%s\x1B[0m\n", temp); //DEV
+	free(temp);
+	
 	shift_data(&d, SIZEOF_NUM);
 	char *t = read_type(&d);
 	if (!t) return ERR_INVALID;
-	//logs("%x => %s\n", *(uint32_t *) t, d.ata); //DEV
 	switch (*(uint32_t *) t) {
 		case HELO:
 		{
-			//logs("case HELO\n"); //DEV
 			char nick[NICK_MAX_LENGTH+1];
 			if (!read_str(&d, nick, NICK_MAX_LENGTH+1)) return ERR_INVALID;
 			char pipe[PIPE_MAX_LENGTH+1];
