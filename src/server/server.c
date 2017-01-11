@@ -181,9 +181,9 @@ options_handler(int argc, char *argv[])
 	usage:
 	puts("Usage: tchatche_server\n"
 		"\t-d\tdaemonize\n"
-		"\t-f FIFO\tuse this pipe as input (if \"-\", similar to -I)\n"
+		"\t-f FIFO\tuse this pipe as input (if the path is \"-\", similar to -I)\n"
 		"\t-h\thelp\n"
-		"\t-I\tuse stdin as isput\n"
+		"\t-I\tuse stdin as input\n"
 		"\t-P\tshow raw packets\n"
 		"\t-v\tversion");
 	exit(status);
