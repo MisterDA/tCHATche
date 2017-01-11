@@ -75,9 +75,11 @@ pro_client_BCST(uint32_t id, char *msg, size_t msglen)
 	char time_buf[6];
 	time_t t = time(NULL);
 	strftime(time_buf, 6, "%H:%M", localtime(&t));
+	
 	char *temp = strndup(msg,msglen);
 	logs("%s <%04u:%s> %s\n", time_buf, id, u->nick, temp);
 	free(temp);
+	
 	broadcast(serv->users, req_server_BCST(u->nick, msg, msglen));
 	return 0;
 }
@@ -92,12 +94,21 @@ pro_client_PRVT(uint32_t id, char *nick, char *msg, size_t msglen)
 	time_t t = time(NULL);
 	strftime(time_buf, 6, "%H:%M", localtime(&t));
 	char *temp = strndup(msg,msglen);
-	logs("%s <%u:%s->%s> %s\n", time_buf, id, u->nick, nick, temp);
+	
+	if (cl)
+		logs("%s <%04u:%s->%04u:%s> %s\n", time_buf, id, u->nick, cl->id, nick, temp);
+	else
+		logs("%s <%04u:%s->????:%s> %s\n", time_buf, id, u->nick, nick, temp);
 	free(temp);
+	
 	if (cl)
 		send_to(cl, req_server_PRVT(u->nick, msg, msglen));
-	else
-		send_to(u, req_server_BCST("SERVER", "unkown user", 11)); // error message
+	else {
+		char *msg;
+		asprintf(&msg, "%s is not online", nick);
+		send_to(u, req_server_BCST("SERVER", msg, strlen(msg))); // error message
+		free (msg);
+	}
 	return 0;
 }
 
@@ -120,11 +131,18 @@ pro_client_SHUT(uint32_t id, char *password)
 	/* TODO: deal with the password */
 	user *u = user_from_id(serv->users, id);
 	if (u) {
-		logs("SHUT from {id: \"%u\"; nick: \"%s\"; passwd: \"%s\"}\n",
-			id, u->nick, password);
+		if (password)
+			logs("SHUT from {id: \"%u\"; nick: \"%s\"; passwd: \"%s\"}\n",
+				id, u->nick, password);
+		else
+			logs("SHUT from {id: \"%u\"; nick: \"%s\"}\n",
+				id, u->nick);
 		broadcast(serv->users, req_server_SHUT(u->nick));
 	} else {
-		logs("SHUT\n");
+		if (password)
+			logs("SHUT {passwd: \"%s\"}\n", password);
+		else
+			logs("SHUT\n");
 		broadcast(serv->users, req_server_SHUT(NULL));
 	}
 	server_end(serv);
@@ -135,7 +153,10 @@ pro_client_SHUT(uint32_t id, char *password)
 int
 pro_client_DEBG(char *password)
 {
-	//TODO do something (!)
+	logs("\x1B[0;1;31m" "I'm a turtle!");
+	if (password)
+		logs(" (%s)", password);
+	logs("\x1B[0m" "\n");
 	return 0;
 }
 
