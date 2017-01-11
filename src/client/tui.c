@@ -4,6 +4,11 @@
 #include <string.h>
 #include "arraylist.h"
 
+#define PAIR_INFO 1
+#define PAIR_TIME 2
+#define PAIR_BCST 3
+#define PAIR_PRVT 4
+
 void
 tui_init_curses(void)
 {
@@ -15,7 +20,10 @@ tui_init_curses(void)
 
     start_color();
     use_default_colors();
-    init_pair(1, -1, COLOR_RED); /* ui->info bkgd */
+    init_pair(PAIR_INFO, -1, COLOR_RED); /* ui->info bkgd */
+    init_pair(PAIR_TIME, COLOR_CYAN, -1);
+    init_pair(PAIR_BCST, COLOR_YELLOW, -1);
+    init_pair(PAIR_PRVT, COLOR_MAGENTA, -1);
 }
 
 void
@@ -50,6 +58,7 @@ tui_init(void)
     meta(ui->input, true);
     keypad(ui->input, true);
     // nodelay(ui->input, true);
+    ui->title = strdup("tCHATche");
 
     wnoutrefresh(stdscr);
     post_form(ui->form);
@@ -86,7 +95,8 @@ void
 tui_print_info(tui *ui, int ch)
 {
     werase(ui->info);
-    waddstr(ui->info, "tCHATche");
+    if (ui->title)
+    	waddstr(ui->info, ui->title);
     const char *fmt = "%04o - %s        ";
     mvwprintw(ui->info, 0, getmaxx(ui->info) / 2 - sizeof("xxxx -") / 2,
               fmt, ch, keyname(ch));
@@ -118,7 +128,19 @@ tui_add_msg(tui *ui, tui_msg *msg)
 
     wresize(ui->chat, getmaxy(ui->chat) + lines, getmaxx(ui->chat));
     strftime(time_buf, 6, "%H:%M", localtime(&msg->timestamp));
-    wprintw(ui->chat, "%s <%s> %s", time_buf, msg->sender, msg->txt);
+    
+    wattron(ui->chat, COLOR_PAIR(PAIR_TIME));
+    wprintw(ui->chat, "%s", time_buf);
+    wattroff(ui->chat, COLOR_PAIR(PAIR_TIME));
+    
+    wattron(ui->chat, COLOR_PAIR(PAIR_BCST));
+    wattron(ui->chat, A_BOLD);
+    wprintw(ui->chat, " <%s> ", msg->sender);
+    wattroff(ui->chat, A_BOLD);
+    wattroff(ui->chat, COLOR_PAIR(PAIR_BCST));
+    
+    wprintw(ui->chat, "%s", msg->txt);
+    
     if (newline)
         waddch(ui->chat, '\n');
     if (getcury(ui->chat) == getmaxy(ui->chat) - 1 &&
@@ -127,7 +149,7 @@ tui_add_msg(tui *ui, tui_msg *msg)
 }
 
 void
-tui_add_prvt_msg(tui *ui, tui_msg *msg)
+tui_add_prvt_msg(tui *ui, tui_msg *msg, bool to)
 {
     bool newline;
     char time_buf[6];
@@ -136,7 +158,31 @@ tui_add_prvt_msg(tui *ui, tui_msg *msg)
 
     wresize(ui->chat, getmaxy(ui->chat) + lines, getmaxx(ui->chat));
     strftime(time_buf, 6, "%H:%M", localtime(&msg->timestamp));
-    wprintw(ui->chat, "%s [%s] %s", time_buf, msg->sender, msg->txt);
+    
+    wattron(ui->chat, COLOR_PAIR(PAIR_TIME));
+    wprintw(ui->chat, "%s", time_buf);
+    wattroff(ui->chat, COLOR_PAIR(PAIR_TIME));
+    
+    wattron(ui->chat, COLOR_PAIR(PAIR_PRVT));
+    wattron(ui->chat, A_BOLD);
+    if (to) {
+    	wprintw(ui->chat, " [");
+    	wattron(ui->chat, A_UNDERLINE);
+    	wprintw(ui->chat, "me");
+    	wattroff(ui->chat, A_UNDERLINE);
+    	wprintw(ui->chat, "->%s] ", msg->sender);
+    } else {
+    	wprintw(ui->chat, " [%s->", msg->sender);
+    	wattron(ui->chat, A_UNDERLINE);
+    	wprintw(ui->chat, "me");
+    	wattroff(ui->chat, A_UNDERLINE);
+    	wprintw(ui->chat, "] ");
+    }
+    wattroff(ui->chat, A_BOLD);
+    wattroff(ui->chat, COLOR_PAIR(PAIR_PRVT));
+    
+    wprintw(ui->chat, "%s", msg->txt);
+    
     if (newline)
         waddch(ui->chat, '\n');
     if (getcury(ui->chat) == getmaxy(ui->chat) - 1 &&

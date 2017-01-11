@@ -204,8 +204,8 @@ exec_command(client *cl, char *buf, size_t len)
 		}
 		case CMD_NICK: {
 		    cl->nick = strdup(buf+1); //FIXME: no arguments
-		    writedata(cl->server_pipe, req_client_HELO(buf+1, cl->client_path));
 		    //TODO: wrong nick
+		    writedata(cl->server_pipe, req_client_HELO(buf+1, cl->client_path));
 		    break;
 		}
 		case CMD_QUIT: {
@@ -241,6 +241,7 @@ exec_command(client *cl, char *buf, size_t len)
 		    *nick_end = '\0';
 		    writedata(cl->server_pipe,
 		              req_client_PRVT(cl->id, cmd_txt_end + 1, nick_end + 1, len));
+		    tui_add_prvt_msg(cl->ui, &(tui_msg){time(NULL), cmd_txt_end+1, nick_end+1}, true);
 		    break;
 		}
 		case CMD_NICK: {
