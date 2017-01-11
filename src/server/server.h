@@ -15,10 +15,11 @@ struct server {
     arlist *transfers;
 };
 
-server *server_init(void);
+server *server_init(char *path);
 void server_end(server *);
 
 extern server *serv;
+extern bool show_packets;
 
 typedef struct transfer transfer;
 struct transfer {

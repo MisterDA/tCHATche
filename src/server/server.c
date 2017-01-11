@@ -19,9 +19,14 @@
 #include "packet_reception.h"
 #include "user.h"
 
+#define TMP "/tmp/tCHATche"
+#define LINK TMP"/server"
+#define PIPE_MAX_LENGTH 256
 
 server *serv = NULL;
+static char *input_fifo = NULL;
 static bool daemonize = false;
+bool show_packets = false;
 
 static bool
 dir_is_empty(const char *path)
@@ -42,13 +47,33 @@ dir_is_empty(const char *path)
 }
 
 server *
-server_init(void)
+server_init(char *path)
 {
 	serv = malloc(sizeof(*serv));
 	serv->users = arlist_create();
-	serv->path = mktmpfifo_server();
-	serv->pipe = open(serv->path, O_RDWR);
-	serv->symlink_created = !symlink(basename(serv->path), "/tmp/tCHATche/server");
+	//fprintf(stderr, "input is %s\n", path);
+	if (!path) {
+		serv->path = mktmpfifo_server();
+		serv->pipe = open(serv->path, O_RDWR);
+		serv->symlink_created = !symlink(basename(serv->path), LINK);
+	} else if (strcmp(path, "-")==0) {
+		serv->path = NULL;
+		serv->pipe = 0;
+		serv->symlink_created = false;
+	} else {
+		serv->path = NULL;
+		serv->pipe = open(path, O_RDWR);
+		if (serv->pipe < 0)
+			error_exit("input");
+		struct stat st;
+		if (serv->pipe!=0 && (fstat(serv->pipe, &st) || !S_ISFIFO(st.st_mode))) {
+			fprintf(stderr, "input: must be FIFO\n");
+			exit(EXIT_FAILURE);
+		}
+		char abspath[PIPE_MAX_LENGTH];
+		realpath(path, abspath);
+		serv->symlink_created = !symlink(abspath, LINK);
+	}
 	serv->transfers = arlist_create();
 	return serv;
 }
@@ -59,13 +84,14 @@ server_end(server *serv)
 	arlist_destroy(serv->users, user_destroy);
 	arlist_destroy(serv->transfers, free);
 	close(serv->pipe);
-	unlink(serv->path);
+	if (serv->path)
+		unlink(serv->path);
 	if (serv->symlink_created)
-		unlink("/tmp/tCHATche/server");
+		unlink(LINK);
 	free(serv->path);
 	free(serv);
-	if (dir_is_empty("/tmp/tCHATche"))
-		unlink("/tmp/tCHATche");
+	if (dir_is_empty(TMP))
+		unlink("TMP");
 }
 
 transfer *
@@ -109,13 +135,16 @@ options_handler(int argc, char *argv[])
 {
 	opterr = 0;
 	int hflag = 0, vflag = 0, status, c;
-	while ((c = getopt(argc, argv, "dhv")) != -1) {
+	while ((c = getopt(argc, argv, "df:hIPv")) != -1) {
 		switch (c) {
+		case 'P': show_packets = true; break;
+		case 'f': input_fifo = optarg; break;
+		case 'I': input_fifo = "-"; break;
 		case 'h': hflag = 1; break;
 		case 'v': vflag = 1; break;
 		case 'd': daemonize = true; break;
 		case '?':
-			if (optopt == 'j')
+			if (optopt == 'f')
 				fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 			else if (isprint(optopt))
 				fprintf(stderr, "Unknown option '-%c'.\n", optopt);
@@ -131,8 +160,14 @@ options_handler(int argc, char *argv[])
 		puts("tchatche_server dev version\n"
 			 "MIT License - "
 			 "Copyright (c) 2016 Antonin Décimo, Jean-Raphaël Gaglione");
+		if (hflag) {
+			puts("");
+			status = EXIT_SUCCESS;
+			goto usage;
+		}
 		exit(EXIT_SUCCESS);
-	} else if (hflag) {
+	}
+	if (hflag) {
 		status = EXIT_SUCCESS;
 		goto usage;
 	}
@@ -146,7 +181,10 @@ options_handler(int argc, char *argv[])
 	usage:
 	puts("Usage: tchatche_server\n"
 		"\t-d\tdaemonize\n"
+		"\t-f FIFO\tuse this pipe as input (if \"-\", similar to -I)\n"
 		"\t-h\thelp\n"
+		"\t-I\tuse stdin as isput\n"
+		"\t-P\tshow raw packets\n"
 		"\t-v\tversion");
 	exit(status);
 }
@@ -164,7 +202,7 @@ main(int argc, char *argv[])
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		perror("signal");
 
-	serv = server_init();
+	serv = server_init(input_fifo);
 	while (true) {
 		if (read_packet(serv->pipe,false)<0)
 			break;

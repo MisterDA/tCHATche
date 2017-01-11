@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include "tchatche.h"
+#include "server.h"
 
 #include "process.h"
 #include "packet.h"
@@ -27,9 +28,11 @@
 int
 process_packet(data d)
 {
-	char *temp = datatostr(&d, NULL, 0);
-	logs("\x1B[0;1;35m%s\x1B[0m\n", temp); //DEV
-	free(temp);
+	if (show_packets) {
+		char *temp = datatostr(&d, NULL, 0);
+		logs("\x1B[0;1;35m" "%s" "\x1B[0m" "\n", temp);
+		free(temp);
+	}
 	
 	shift_data(&d, SIZEOF_NUM);
 	char *t = read_type(&d);
@@ -37,7 +40,7 @@ process_packet(data d)
 	switch (*(uint32_t *) t) {
 		case HELO:
 		{
-			char nick[NICK_MAX_LENGTH+1];
+			char nick[NICK_MAX_LENGTH+1]; //FIXME: send BADD when nick too long
 			if (!read_str(&d, nick, NICK_MAX_LENGTH+1)) return ERR_INVALID;
 			char pipe[PIPE_MAX_LENGTH+1];
 			if (!read_str(&d, pipe, PIPE_MAX_LENGTH+1)) return ERR_INVALID;
@@ -76,7 +79,7 @@ process_packet(data d)
 		case SHUT:
 		{
 			uint32_t id = read_num(&d);
-			if (id>MAX_NUM) return ERR_INVALID;
+			//if (id>MAX_NUM) return ERR_INVALID;
 			if (d.length==0)
 				return pro_client_SHUT(id, NULL);
 			char pass[PASS_MAX_LENGTH+1];
