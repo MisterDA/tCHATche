@@ -61,7 +61,7 @@ pro_client_BYEE(uint32_t id)
 		}
 	}*/
 	if (u == NULL) return -1;
-	logs("SHUT from {id: %u; nick: \"%s\"}\n", id, u->nick);
+	logs("BYEE from {id: %u; nick: \"%s\"}\n", id, u->nick);
 	send_to(u, req_server_BYEE(id));
 	remove_user(user_from_id(serv->users, id));
 	//arlist_remove(serv->users, i);
