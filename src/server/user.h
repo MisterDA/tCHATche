@@ -28,6 +28,8 @@ user *user_from_id(arlist *list, user_id id);
 user *user_from_nick(arlist *list, char *nick);
 user *user_from_pipe_path(arlist *list, char *path);
 
+void remove_user(user *u);
+
 ssize_t send_to(user *u, data data);
 void broadcast(arlist *list, data data);
 

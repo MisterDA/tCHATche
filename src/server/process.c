@@ -51,19 +51,21 @@ pro_client_HELO(char *nick, char *path)
 int
 pro_client_BYEE(uint32_t id)
 {
-	size_t i = 0;
-	user *u = NULL;
+	//size_t i = 0;
+	user *u = user_from_id(serv->users, id); /*= NULL;
 	for (; i < arlist_size(serv->users); ++i) {
 		user *v = arlist_get(serv->users, i);
 		if (v->id == id) {
 			u = v;
 			break;
 		}
-	}
+	}*/
 	if (u == NULL) return -1;
+	logs("SHUT from {id: %u; nick: \"%s\"}\n", id, u->nick);
 	send_to(u, req_server_BYEE(id));
-	arlist_remove(serv->users, i);
-	user_destroy(u);
+	remove_user(user_from_id(serv->users, id));
+	//arlist_remove(serv->users, i);
+	//user_destroy(u);
 	return 0;
 }
 
@@ -132,10 +134,10 @@ pro_client_SHUT(uint32_t id, char *password)
 	user *u = user_from_id(serv->users, id);
 	if (u) {
 		if (password)
-			logs("SHUT from {id: \"%u\"; nick: \"%s\"; passwd: \"%s\"}\n",
+			logs("SHUT from {id: %u; nick: \"%s\"; passwd: \"%s\"}\n",
 				id, u->nick, password);
 		else
-			logs("SHUT from {id: \"%u\"; nick: \"%s\"}\n",
+			logs("SHUT from {id: %u; nick: \"%s\"}\n",
 				id, u->nick);
 		broadcast(serv->users, req_server_SHUT(u->nick));
 	} else {

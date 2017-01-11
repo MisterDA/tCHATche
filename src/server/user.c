@@ -96,9 +96,10 @@ user_from_pipe_path(arlist *list, char *path)
     return NULL;
 }
 
-static void
+void
 remove_user(user *u)
 {
+	if (!u) return;
     arlist_remove(serv->users, index_of(serv->users, compare_users, u));
     char *path = strdup(u->path);
     user_destroy(u);
