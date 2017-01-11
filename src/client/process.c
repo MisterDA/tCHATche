@@ -82,6 +82,7 @@ pro_server_PRVT(char *nick, char *msg, size_t msglen)
 {
 	char *message = strndup(msg, msglen);
 	tui_add_prvt_msg(cl->ui, &(tui_msg){time(NULL), nick, message}, false);
+	strcpy(cl->last_prvt, nick);
 	free(message);
 	return 0;
 }

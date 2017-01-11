@@ -25,14 +25,17 @@ static char *invalid_cmd = "Invalid command.";
 static char *unknown_cmd = "Unknown command.";
 
 static cmd_tok cmd_toks[] = {
+    {CMD_NICK, "nick",  "/nick <nick>    set your nickname"},
+    {CMD_WHO,  "who",   "/who            list users on the server"},
+    {CMD_MSG,  "msg",   "/msg <nick> ... send a private message"},
+    {CMD_MSG,  "m",     "/m <nick> ...   alias for /msg"},
+    {CMD_RESP, "r",     "/r ...          send a private message to the last correspondant"},
+    {CMD_QUIT, "quit",  "/quit           quit tCHATche client"},
+    {CMD_SHUT, "shut",  "/shut [pwd]     shut down the server"},
+    {CMD_SEND, "send",  "/send <nick> <file>  send a file"},
+    {CMD_HELP, "help",  "/help [cmd]     see more details about a specific command"},
+    {CMD_HELP, "?",     "/? [cmd]        alias for /help"},
     {CMD_DEBG, "debug", "/debug          debug server"},
-    {CMD_HELP, "help", "/help <cmd>     see more details about a specific command"},
-    {CMD_WHO,  "who", "/who            list users on the server"},
-    {CMD_MSG,  "msg", "/msg <nick> ... send a private message"},
-    {CMD_NICK, "nick", "/nick <nick>    set your nickname"},
-    {CMD_QUIT, "quit", "/quit           quit tCHATche client"},
-    {CMD_SEND, "send", "/send <nick> <file> send a file"},
-    {CMD_SHUT, "shut", "/shut [pwd]     shut down the server"},
 };
 
 static off_t
@@ -55,6 +58,7 @@ client_init(void)
     cl->has_id = false;
     cl->id = 9999 + 1;
     cl->nick = NULL;
+    memset(cl->last_prvt, '\0', sizeof cl->last_prvt);
     cl->upload = NULL;
     cl->downloads = arlist_create();
     return cl;
@@ -169,7 +173,7 @@ exec_command_HELP(client *cl, char *buf, size_t len) {
             }
         }
     }
-    tui_add_txt(cl->ui, invalid_cmd);
+    tui_print_txt(cl->ui, "/%-13s  Sorry ! Not yet implemented.", buf+1);
 }
 
 void
@@ -246,6 +250,20 @@ exec_command(client *cl, char *buf, size_t len)
 		    writedata(cl->server_pipe,
 		              req_client_PRVT(cl->id, cmd_txt_end + 1, nick_end + 1, len));
 		    tui_add_prvt_msg(cl->ui, &(tui_msg){time(NULL), cmd_txt_end+1, nick_end+1}, true);
+		    strcpy(cl->last_prvt, cmd_txt_end+1);
+		    break;
+		}
+		case CMD_RESP: {
+			if (cmd_len >= len) {
+		        tui_add_txt(cl->ui, invalid_cmd);
+		        break;
+		    }
+		    if (strcmp(cl->last_prvt, "")==0) {
+		    	tui_print_txt(cl->ui, "%s You haven't talk to anyone !", invalid_cmd);
+		    }
+		    writedata(cl->server_pipe,
+		              req_client_PRVT(cl->id, cl->last_prvt, cmd_txt_end + 1, len));
+		    tui_add_prvt_msg(cl->ui, &(tui_msg){time(NULL), cl->last_prvt, cmd_txt_end+1}, true);
 		    break;
 		}
 		case CMD_NICK: {
@@ -455,7 +473,7 @@ main(int argc, char *argv[])
             break;
         case '\004': /* EOT - Ctrl-D */
             run = false;
-            //writedata(cl->server_pipe, req_client_BYEE(cl->id));
+            writedata(cl->server_pipe, req_client_BYEE(cl->id));
             break;
         case '\r':
         case '\n': {

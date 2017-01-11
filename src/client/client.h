@@ -6,6 +6,8 @@
 #include "arraylist.h"
 #include "tui.h"
 
+#define NICK_MAX_LENGTH 32
+
 typedef struct {
     uint32_t id;
     uint32_t series;
@@ -29,6 +31,7 @@ typedef struct {
     uint32_t id;
     char *nick;
 
+	char last_prvt[NICK_MAX_LENGTH+1];
     transfer *upload;
     arlist *downloads;
 } client;
@@ -45,7 +48,7 @@ void client_init_tui(client *cl);
 void client_end_tui(client *cl);
 
 typedef enum {
-    CMD_DEBG, CMD_HELP, CMD_WHO, CMD_MSG, CMD_NICK, CMD_QUIT, CMD_SEND,
+    CMD_DEBG, CMD_HELP, CMD_WHO, CMD_MSG, CMD_RESP, CMD_NICK, CMD_QUIT, CMD_SEND,
     CMD_SHUT,
 } command;
 
