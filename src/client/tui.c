@@ -96,7 +96,7 @@ tui_print_info(tui *ui, int ch)
 {
     werase(ui->info);
     if (ui->title)
-    	waddstr(ui->info, ui->title);
+    	mvwaddstr(ui->info, 0, 0, ui->title);
     const char *fmt = "%04o - %s        ";
     mvwprintw(ui->info, 0, getmaxx(ui->info) / 2 - sizeof("xxxx -") / 2,
               fmt, ch, keyname(ch));

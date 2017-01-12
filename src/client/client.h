@@ -25,6 +25,7 @@ void destroy_transfer(void *e);
 typedef struct {
     int server_pipe, client_pipe;
     char *server_path, *client_path;
+    bool client_created;
     tui *ui;
 
     bool has_id;

@@ -18,7 +18,8 @@
 #include "tui.h"
 #include "request.h"
 
-
+#define TMP "/tmp/tCHATche"
+#define LINK TMP"/server"
 client *cl = NULL;
 
 static char *invalid_cmd = "Invalid command.";
@@ -56,7 +57,7 @@ client_init(void)
     cl->client_path = NULL;
     cl->ui = NULL;
     cl->has_id = false;
-    cl->id = 9999 + 1;
+    cl->id = MAX_NUM+1;
     cl->nick = NULL;
     memset(cl->last_prvt, '\0', sizeof cl->last_prvt);
     cl->upload = NULL;
@@ -67,12 +68,17 @@ client_init(void)
 void
 client_end(client *cl)
 {
+    client_end_tui(cl);
     close(cl->server_pipe);
     close(cl->client_pipe);
-    unlink(cl->client_path);
+    if (cl->client_created) {
+    	unlink(cl->client_path);
+    	if (dir_is_empty(TMP))
+			rmdir(TMP);
+    }
+    free(cl->server_path);
     free(cl->client_path);
     free(cl->nick);
-    client_end_tui(cl);
     arlist_destroy(cl->downloads, destroy_transfer);
     free(cl);
 }
@@ -80,24 +86,67 @@ client_end(client *cl)
 bool
 open_server_pipe(client *cl)
 {
+	if (!cl->server_path)
+		cl->server_path = strdup(LINK);
+	if (strcmp(cl->server_path, "-")==0) {
+		cl->server_path = NULL;
+		cl->server_pipe = 1;
+	} else {
+		cl->server_pipe = open(cl->server_path, O_WRONLY);
+		if (cl->server_pipe == -1) {
+			perror(cl->server_path);
+			return false;
+		}
+		struct stat st;
+		if (cl->server_pipe!=1 && (fstat(cl->server_pipe, &st) || !S_ISFIFO(st.st_mode))) {
+			fprintf(stderr, "%s: Not FIFO\n", cl->server_path);
+			return false;
+		}
+	}
+	return true;
+	
+	
     bool success = (cl->server_pipe = open(cl->server_path, O_WRONLY)) != -1;
     if (!success)
         perror(cl->server_path);
+        
     return success;
 }
 
 bool
 open_client_pipe(client *cl)
 {
-    cl->client_path = mktmpfifo_client();
-    if ((cl->client_pipe = open(cl->client_path, O_RDONLY | O_NONBLOCK)) == -1) {
-        perror(cl->client_path);
-        close(cl->server_pipe);
-        free(cl->client_path);
-        close(cl->server_pipe);
-        return false;
+	if (!cl->client_path) {
+    	cl->client_path = mktmpfifo_client();
+    	cl->client_created = true;
+    } else if (strcmp(cl->client_path, "-")==0) {
+    	fprintf(stderr, "input: Must be a physical FIFO, not stdin\n");
+    	goto err0;
+    } else if (cl->client_created) {
+    	mktmpfifo(cl->client_path);
+    }
+    char *abspath = realpath(cl->client_path, NULL);
+    if (!abspath) {
+    	perror(cl->client_path);
+    	goto err0;
+    }
+    free(cl->client_path);
+    cl->client_path = abspath;
+    cl->client_pipe = open(cl->client_path, O_RDONLY | O_NONBLOCK);
+    struct stat st;
+    if (cl->client_pipe == -1) {
+    	perror(cl->client_path);
+    	goto err0;
+    }
+    if (fstat(cl->client_pipe, &st) || !S_ISFIFO(st.st_mode)) {
+        fprintf(stderr, "%s: Not FIFO\n", cl->client_path);
+        goto err1;
     }
     return true;
+    err1: close(cl->client_pipe);
+    err0: free(cl->client_path);
+    close(cl->server_pipe);
+    return false;
 }
 
 void
@@ -217,8 +266,8 @@ exec_command(client *cl, char *buf, size_t len)
 		    break;
 		}
 		case CMD_QUIT: {
-		    //TODO: like ctrl-D
-		    tui_add_txt(cl->ui, "TODO: \"/quit\" when nick not set");
+		    client_end(cl);
+		    exit(EXIT_SUCCESS);
 		    break;
 		}
 		default:
@@ -354,10 +403,20 @@ trim(char *str)
 static void
 options_handler(int argc, char *argv[], client *cl)
 {
+    cl->server_path = NULL;
+    cl->client_path = NULL;
+    cl->client_created = false;
+    cl->nick = NULL;
+    
     opterr = 0;
     int hflag = 0, vflag = 0, status, c;
-    while ((c = getopt(argc, argv, "hv")) != -1) {
+    while ((c = getopt(argc, argv, "f:F:hn:Os:v")) != -1) {
         switch (c) {
+		case 'f': cl->client_path = optarg; cl->client_created = false; break;
+		case 'F': cl->client_path = optarg; cl->client_created = true; break;
+		case 's': cl->server_path = optarg; break;
+		case 'O': cl->server_path = "-"; break;
+		case 'n': cl->nick = optarg; break;
         case 'h': hflag = 1; break;
         case 'v': vflag = 1; break;
         case '?':
@@ -366,8 +425,7 @@ options_handler(int argc, char *argv[], client *cl)
             else
                 fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
         default:
-            status = EXIT_FAILURE;
-            goto usage;
+            goto failure;
         }
     }
 
@@ -375,26 +433,56 @@ options_handler(int argc, char *argv[], client *cl)
         puts("tchatche dev version\n"
              "MIT License - "
              "Copyright (c) 2016 Antonin Décimo, Jean-Raphaël Gaglione");
-        exit(EXIT_SUCCESS);
-    } else if (hflag) {
-        status = EXIT_SUCCESS;
-        goto usage;
+        if (hflag) puts("");
+        else exit(EXIT_SUCCESS);
     }
-
-    if (optind == argc) {
-        cl->server_path = "/tmp/tCHATche/server";
-    } else if (optind == argc - 1) {
-        cl->server_path = argv[optind];
-    } else {
-        status = EXIT_FAILURE;
+    if (hflag)
         goto usage;
-    }
 
+
+    if (optind < argc) {
+    	if (cl->server_path) goto failure;
+    	if (strcmp(argv[optind], "@")!=0) {
+        	cl->server_path = argv[optind];
+		}
+    }
+    if (cl->server_path)
+    	cl->server_path = strdup(cl->server_path);
+    
+    if (++optind < argc) {
+    	if (cl->client_path) goto failure;
+    	if (strcmp(argv[optind], "@")!=0) {
+		    cl->client_path = argv[optind];
+		    cl->client_created = access(cl->client_path, F_OK);
+		}
+    }
+    if (cl->client_path)
+    	cl->client_path = strdup(cl->client_path);
+	
+	if (++optind < argc)
+		goto failure;
+	
+	
+	if (cl->nick)
+    	cl->nick = strdup(cl->nick);
+	
+	if (cl->server_path && strcmp(cl->server_path, "-")==0) {
+		fprintf(stderr, "output: stdout doesn't work for the moment\n"); //FIXME
+		exit(EXIT_FAILURE);
+	}
+	
     return;
-    usage:
-    puts("Usage: tchatche [server_pipe]\n"
-         "\t-h\thelp\n"
-         "\t-v\tversion");
+    if (0) usage: status = EXIT_SUCCESS;
+	if (0) failure: status = EXIT_FAILURE;
+    puts("Usage: tchatche [[-s] SERV_FIFO] [[-f|F] FIFO]\n"
+		"\t-f FIFO\tuse this pipe as input (\"-\" is not allowed)\n"
+		"\t-F FIFO\tcreate this temporary pipe and use it as input (\"-\" is not allowed)\n"
+		"\t-h\thelp\n"
+		"\t-n NICK\tinitialize the tchat session with this nick\n"
+		"\t-O\tuse stdout as output\n"
+		"\t-s FIFO\tuse this pipe as output (if the path is \"-\", similar to -O)\n"
+		"\t-v\tversion\n"
+		"Use \"@\" outside of the parameters to use the default value.");
     exit(status);
 }
 
@@ -420,6 +508,14 @@ main(int argc, char *argv[])
     options_handler(argc, argv, cl);
     if (!open_server_pipe(cl) || !open_client_pipe(cl))
         exit(EXIT_FAILURE);
+    
+    if (cl->nick) {
+    	writedata(cl->server_pipe, req_client_HELO(cl->nick, cl->client_path));
+    	//TODO: peut mieux faire:
+    	// start l'ui uniquement une fois le OKOK reçu
+    	// quitter le programme si BADD
+    }
+    
     client_init_tui(cl);
     tui *ui = cl->ui;
 

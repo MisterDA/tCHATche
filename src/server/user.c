@@ -101,10 +101,10 @@ remove_user(user *u)
 {
 	if (!u) return;
     arlist_remove(serv->users, index_of(serv->users, compare_users, u));
-    char *path = strdup(u->path);
+    //char *path = strdup(u->path);
     user_destroy(u);
-    unlink(path);
-    free(path);
+    //unlink(path); // not your job
+    //free(path);
 }
 
 ssize_t

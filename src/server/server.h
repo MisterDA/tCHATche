@@ -15,7 +15,7 @@ struct server {
     arlist *transfers;
 };
 
-server *server_init(char *path);
+server *server_init(char *path, bool create);
 void server_end(server *);
 
 extern server *serv;

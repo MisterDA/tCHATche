@@ -51,21 +51,11 @@ pro_client_HELO(char *nick, char *path)
 int
 pro_client_BYEE(uint32_t id)
 {
-	//size_t i = 0;
-	user *u = user_from_id(serv->users, id); /*= NULL;
-	for (; i < arlist_size(serv->users); ++i) {
-		user *v = arlist_get(serv->users, i);
-		if (v->id == id) {
-			u = v;
-			break;
-		}
-	}*/
+	user *u = user_from_id(serv->users, id);
 	if (u == NULL) return -1;
 	logs("BYEE from {id: %u; nick: \"%s\"}\n", id, u->nick);
 	send_to(u, req_server_BYEE(id));
 	remove_user(user_from_id(serv->users, id));
-	//arlist_remove(serv->users, i);
-	//user_destroy(u);
 	return 0;
 }
 

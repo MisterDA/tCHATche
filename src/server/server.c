@@ -21,37 +21,19 @@
 
 #define TMP "/tmp/tCHATche"
 #define LINK TMP"/server"
-#define PIPE_MAX_LENGTH 256
 
 server *serv = NULL;
 static char *input_fifo = NULL;
+static bool input_create = false;
 static bool daemonize = false;
 bool show_packets = false;
 
-static bool
-dir_is_empty(const char *path)
-{
-	DIR *dir;
-	bool ret = true;
-	struct dirent *ent;
-	if ((dir = opendir(path)) == NULL)
-		return false;
-	while ((ent = readdir(dir))) {
-		if (!strcmp(ent->d_name, ".") || !(strcmp(ent->d_name, "..")))
-			continue;
-		ret = false;
-		break;
-	}
-	closedir(dir);
-	return ret;
-}
 
 server *
-server_init(char *path)
+server_init(char *path, bool create)
 {
 	serv = malloc(sizeof(*serv));
 	serv->users = arlist_create();
-	//fprintf(stderr, "input is %s\n", path);
 	if (!path) {
 		serv->path = mktmpfifo_server();
 		serv->pipe = open(serv->path, O_RDWR);
@@ -61,18 +43,22 @@ server_init(char *path)
 		serv->pipe = 0;
 		serv->symlink_created = false;
 	} else {
-		serv->path = NULL;
+		if (create)
+			serv->path = mktmpfifo(path);
+		else
+			serv->path = NULL;
 		serv->pipe = open(path, O_RDWR);
-		if (serv->pipe < 0)
-			error_exit("input");
+		if (serv->pipe == -1)
+			error_exit(path);
 		struct stat st;
 		if (serv->pipe!=0 && (fstat(serv->pipe, &st) || !S_ISFIFO(st.st_mode))) {
-			fprintf(stderr, "input: must be FIFO\n");
-			exit(EXIT_FAILURE);
+			fprintf(stderr, "%s: Not FIFO\n", path);
+			exit(EXIT_FAILURE); // do not close: don't touch the file !
 		}
-		char abspath[PIPE_MAX_LENGTH];
-		realpath(path, abspath);
-		serv->symlink_created = !symlink(abspath, LINK);
+		mktmpdir();
+		char *abspath = realpath(path, NULL);
+		serv->symlink_created = abspath && !symlink(abspath, LINK);
+		free(abspath);
 	}
 	serv->transfers = arlist_create();
 	return serv;
@@ -91,7 +77,7 @@ server_end(server *serv)
 	free(serv->path);
 	free(serv);
 	if (dir_is_empty(TMP))
-		unlink("TMP");
+		rmdir(TMP);
 }
 
 transfer *
@@ -135,11 +121,12 @@ options_handler(int argc, char *argv[])
 {
 	opterr = 0;
 	int hflag = 0, vflag = 0, status, c;
-	while ((c = getopt(argc, argv, "df:hIPv")) != -1) {
+	while ((c = getopt(argc, argv, "df:F:hIPv")) != -1) {
 		switch (c) {
+		case 'f': input_fifo = optarg; input_create = false; break;
+		case 'F': input_fifo = optarg; input_create = true; break;
+		case 'I': input_fifo = "-"; input_create = false; break;
 		case 'P': show_packets = true; break;
-		case 'f': input_fifo = optarg; break;
-		case 'I': input_fifo = "-"; break;
 		case 'h': hflag = 1; break;
 		case 'v': vflag = 1; break;
 		case 'd': daemonize = true; break;
@@ -151,8 +138,7 @@ options_handler(int argc, char *argv[])
 			else
 				fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
 		default:
-			status = EXIT_FAILURE;
-			goto usage;
+			goto failure;
 		}
 	}
 
@@ -160,32 +146,36 @@ options_handler(int argc, char *argv[])
 		puts("tchatche_server dev version\n"
 			 "MIT License - "
 			 "Copyright (c) 2016 Antonin Décimo, Jean-Raphaël Gaglione");
-		if (hflag) {
-			puts("");
-			status = EXIT_SUCCESS;
-			goto usage;
-		}
-		exit(EXIT_SUCCESS);
+		if (hflag) puts("");
+        else exit(EXIT_SUCCESS);
 	}
-	if (hflag) {
-		status = EXIT_SUCCESS;
+	if (hflag)
 		goto usage;
-	}
 
-	if (optind != argc) {
-		status = EXIT_FAILURE;
-		goto usage;
+
+	if (optind < argc) {
+		if (input_fifo) goto failure;
+    	if (strcmp(argv[optind], "@")!=0) {
+			input_fifo = argv[optind];
+			input_create = access(input_fifo, F_OK);
+		}
 	}
+	
+	if (++optind < argc)
+		goto failure;
 
 	return;
-	usage:
-	puts("Usage: tchatche_server\n"
+	if (0) usage: status = EXIT_SUCCESS;
+	if (0) failure: status = EXIT_FAILURE;
+	puts("Usage: tchatche_server [[-f|F] FIFO]\n"
 		"\t-d\tdaemonize\n"
 		"\t-f FIFO\tuse this pipe as input (if the path is \"-\", similar to -I)\n"
+		"\t-F FIFO\tcreate this temporary pipe and use it as input (similar to -f with \"-\")\n"
 		"\t-h\thelp\n"
 		"\t-I\tuse stdin as input\n"
 		"\t-P\tshow raw packets\n"
-		"\t-v\tversion");
+		"\t-v\tversion\n"
+		"Use \"@\" outside of the parameters to use the default value.");
 	exit(status);
 }
 
@@ -202,7 +192,7 @@ main(int argc, char *argv[])
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		perror("signal");
 
-	serv = server_init(input_fifo);
+	serv = server_init(input_fifo, input_create);
 	while (true) {
 		if (read_packet(serv->pipe,false)<0)
 			break;
