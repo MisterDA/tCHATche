@@ -7,12 +7,12 @@
 
 typedef struct server server;
 struct server {
-    arlist *users;
-    int pipe;
-    char *path;
-    bool symlink_created;
+	arlist *users;
+	int pipe;
+	char *path;
+	bool symlink_created;
 
-    arlist *transfers;
+	arlist *transfers;
 };
 
 server *server_init(char *path, bool create);
@@ -23,10 +23,10 @@ extern bool show_packets;
 
 typedef struct transfer transfer;
 struct transfer {
-    uint32_t id;
-    uint32_t len;
-    user *sender;
-    user *receiver;
+	uint32_t id;
+	uint32_t len;
+	user *sender;
+	user *receiver;
 };
 
 transfer *transfer_from_id(arlist *list, uint32_t id);

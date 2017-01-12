@@ -35,40 +35,40 @@ char *mktmpfifo(char *path) {
  * 10 times to create a new fifo. */
 static char *mkstmpfifo(char *path)
 {
-    int file, ret, i = 0;
-    do {
-        mode_t omode = umask(0);
-        if ((file = mkstemp(path)) == -1)
-            error_exit("mkstemp");
-        if (close(file))
-            error_exit("close");
-        if (unlink(path))
-            error_exit("unlink");
-        if ((ret = mkfifo(path, 0666)))
-            if (errno != EEXIST)
-                error_exit(NULL);
-        umask(omode);
-        ++i;
-    } while (ret == -1 && i < 10);
-    return ret != -1 ? path : NULL;
+	int file, ret, i = 0;
+	do {
+		mode_t omode = umask(0);
+		if ((file = mkstemp(path)) == -1)
+			error_exit("mkstemp");
+		if (close(file))
+			error_exit("close");
+		if (unlink(path))
+			error_exit("unlink");
+		if ((ret = mkfifo(path, 0666)))
+			if (errno != EEXIST)
+				error_exit(NULL);
+		umask(omode);
+		++i;
+	} while (ret == -1 && i < 10);
+	return ret != -1 ? path : NULL;
 }
 
 char *mktmpfifo_client(void)
 {
-    size_t len = sizeof(TMP"/client-XXXXXX");
-    char *p = malloc(len);
-    memcpy(p, TMP"/client-XXXXXX", len);
+	size_t len = sizeof(TMP"/client-XXXXXX");
+	char *p = malloc(len);
+	memcpy(p, TMP"/client-XXXXXX", len);
 	mktmpdir();
-    return mkstmpfifo(p);
+	return mkstmpfifo(p);
 }
 
 char *mktmpfifo_server(void)
 {
-    size_t len = sizeof(TMP"/server-XXXXXX");
-    char *p = malloc(len);
-    memcpy(p, TMP"/server-XXXXXX", len);
+	size_t len = sizeof(TMP"/server-XXXXXX");
+	char *p = malloc(len);
+	memcpy(p, TMP"/server-XXXXXX", len);
 	mktmpdir();
-    return mkstmpfifo(p);
+	return mkstmpfifo(p);
 }
 
 
@@ -96,32 +96,32 @@ static FILE *log_file = NULL;
 static const char *log_motd = "";
 
 void logs_start(FILE *file, const char *motd) {
-    if (log_file) {
-        fputs("Logging had already started", stderr);
-        exit(EXIT_FAILURE);
-    } else if (file) {
-        log_file = file;
-    }
-    fflush(log_file);
-    log_motd = motd;
+	if (log_file) {
+		fputs("Logging had already started", stderr);
+		exit(EXIT_FAILURE);
+	} else if (file) {
+		log_file = file;
+	}
+	fflush(log_file);
+	log_motd = motd;
 }
 
 void logs(const char *fmt, ...) {
-    if (!log_file) {
-        fputs("Logging had not started", stderr);
-        exit(EXIT_FAILURE);
-    }
-    fputs(log_motd, log_file);
-    va_list varglist;
-    va_start(varglist, fmt);
-    vfprintf(log_file, fmt, varglist);
-    va_end(varglist);
-    fflush(log_file);
+	if (!log_file) {
+		fputs("Logging had not started", stderr);
+		exit(EXIT_FAILURE);
+	}
+	fputs(log_motd, log_file);
+	va_list varglist;
+	va_start(varglist, fmt);
+	vfprintf(log_file, fmt, varglist);
+	va_end(varglist);
+	fflush(log_file);
 }
 
 void logs_end(void) {
-    fputs("\n\n", log_file);
-    if (log_file)
-        fclose(log_file);
-    log_file = NULL;
+	fputs("\n\n", log_file);
+	if (log_file)
+		fclose(log_file);
+	log_file = NULL;
 }

@@ -7,19 +7,19 @@
 
 typedef struct tui tui;
 struct tui {
-    WINDOW *info, *chat, *input;
-    FORM *form;
-    FIELD *fields[2];
+	WINDOW *info, *chat, *input;
+	FORM *form;
+	FIELD *fields[2];
 
-    int chat_row;
-    char *title;
+	int chat_row;
+	char *title;
 };
 
 typedef struct tui_msg tui_msg;
 struct tui_msg {
-    time_t timestamp;
-    char *sender;
-    char *txt;
+	time_t timestamp;
+	char *sender;
+	char *txt;
 };
 
 void tui_init_curses(void);

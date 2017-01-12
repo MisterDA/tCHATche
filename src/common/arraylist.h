@@ -8,8 +8,8 @@
 
 typedef struct arlist arlist;
 struct arlist {
-    void **elements;
-    size_t capacity, size;
+	void **elements;
+	size_t capacity, size;
 };
 
 arlist *arlist_create(void);

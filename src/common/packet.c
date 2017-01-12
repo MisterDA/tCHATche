@@ -77,7 +77,7 @@ read_str(data *d, char *str, uint32_t len)
 	data mem;
 	if (!read_mem(d, &mem)) goto err0;
 	return datatostr(&mem, str, len);
-    err0: return NULL;
+	err0: return NULL;
 }
 
 char * /* aquire a pointer to the original data */
@@ -97,19 +97,19 @@ write_num(data *d, uint32_t number)
 	if (!d) goto err0;
 	if (number > MAX_NUM) goto err0;
 	char *dest;
-    if (d) {
-    	dest = d->ata;
-    	if (!shift_data(d, SIZEOF_NUM)) goto err0;
-    } else { /* en fait non, trop dangereux (le code derange pas) */
-        dest = malloc(SIZEOF_NUM+1);
-        dest[SIZEOF_NUM] = '\0';
-   	}
-    for (int i = SIZEOF_NUM-1; i >= 0; --i) {
-    	dest[i] = '0'+(number%10);
-    	number /= 10;
-    }
-    return dest;
-    err0: return NULL;
+	if (d) {
+		dest = d->ata;
+		if (!shift_data(d, SIZEOF_NUM)) goto err0;
+	} else { /* en fait non, trop dangereux (le code derange pas) */
+		dest = malloc(SIZEOF_NUM+1);
+		dest[SIZEOF_NUM] = '\0';
+	   }
+	for (int i = SIZEOF_NUM-1; i >= 0; --i) {
+		dest[i] = '0'+(number%10);
+		number /= 10;
+	}
+	return dest;
+	err0: return NULL;
 }
 
 char *
@@ -118,19 +118,19 @@ write_longnum(data *d, uint32_t number)
 	if (!d) goto err0;
 	if (number > MAX_LONGNUM) goto err0;
 	char *dest;
-    if (d) {
-    	dest = d->ata;
-    	if (!shift_data(d, SIZEOF_LONGNUM)) goto err0;
-    } else {
-        dest = malloc(SIZEOF_LONGNUM+1);
-        dest[SIZEOF_LONGNUM] = '\0';
-   	}
-    for (int i = SIZEOF_LONGNUM-1; i >= 0; --i) {
-    	dest[i] = '0'+(number%10);
-    	number /= 10;
-    }
-    return dest;
-    err0: return NULL;
+	if (d) {
+		dest = d->ata;
+		if (!shift_data(d, SIZEOF_LONGNUM)) goto err0;
+	} else {
+		dest = malloc(SIZEOF_LONGNUM+1);
+		dest[SIZEOF_LONGNUM] = '\0';
+	   }
+	for (int i = SIZEOF_LONGNUM-1; i >= 0; --i) {
+		dest[i] = '0'+(number%10);
+		number /= 10;
+	}
+	return dest;
+	err0: return NULL;
 }
 
 char *
@@ -175,4 +175,3 @@ write_str(data *d, char *str)
 	return write_data(d, &src);
 	err0: return NULL;
 }
-

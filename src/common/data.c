@@ -122,9 +122,9 @@ char *
 datatostr(const data *d, char *str, size_t len)
 {
 	if (!str) {
-	    if (!len) len = d->length+1;
-	    else if (d->length>=len) goto err0;
-	    str = malloc(len);
+		if (!len) len = d->length+1;
+		else if (d->length>=len) goto err0;
+		str = malloc(len);
 	} else if (d->length>=len) goto err1;
 	strncpy(str, d->ata, d->length);
 	strncpy(str+d->length, "", len-d->length);

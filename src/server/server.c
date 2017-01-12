@@ -83,37 +83,37 @@ server_end(server *serv)
 transfer *
 transfer_from_id(arlist *list, uint32_t id)
 {
-    for (size_t i=0; i<arlist_size(list); i++) {
-        transfer *t = arlist_get(list,i);
-        if (t->id==id)
-            return t;
-    }
-    return NULL;
+	for (size_t i=0; i<arlist_size(list); i++) {
+		transfer *t = arlist_get(list,i);
+		if (t->id==id)
+			return t;
+	}
+	return NULL;
 }
 
 uint32_t
 get_available_transfer_id(arlist *list)
 {
-    if (arlist_size(list) == 0)
-        return 0;
-    transfer *t1 = (transfer *) arlist_get(list, 0);
-    transfer *t2 = t1;
-    for (size_t i = 1; i < arlist_size(list); ++i) {
-        t2 = (transfer *) arlist_get(list, i);
-        if (t1->id + 1 != t2->id) {
-            t2 = t1;
-            break;
-        }
-    }
-    return t2->id + 1;
+	if (arlist_size(list) == 0)
+		return 0;
+	transfer *t1 = (transfer *) arlist_get(list, 0);
+	transfer *t2 = t1;
+	for (size_t i = 1; i < arlist_size(list); ++i) {
+		t2 = (transfer *) arlist_get(list, i);
+		if (t1->id + 1 != t2->id) {
+			t2 = t1;
+			break;
+		}
+	}
+	return t2->id + 1;
 }
 
 int
 compare_transfers(const void *a, const void *b)
 {
-    const transfer *ta = (const transfer *) a;
-    const transfer *tb = (const transfer *) b;
-    return (ta->id > tb->id) - (ta->id < tb->id);
+	const transfer *ta = (const transfer *) a;
+	const transfer *tb = (const transfer *) b;
+	return (ta->id > tb->id) - (ta->id < tb->id);
 }
 
 static void
@@ -147,7 +147,7 @@ options_handler(int argc, char *argv[])
 			 "MIT License - "
 			 "Copyright (c) 2016 Antonin Décimo, Jean-Raphaël Gaglione");
 		if (hflag) puts("");
-        else exit(EXIT_SUCCESS);
+		else exit(EXIT_SUCCESS);
 	}
 	if (hflag)
 		goto usage;
@@ -155,12 +155,12 @@ options_handler(int argc, char *argv[])
 
 	if (optind < argc) {
 		if (input_fifo) goto failure;
-    	if (strcmp(argv[optind], "@")!=0) {
+		if (strcmp(argv[optind], "@")!=0) {
 			input_fifo = argv[optind];
 			input_create = access(input_fifo, F_OK);
 		}
 	}
-	
+
 	if (++optind < argc)
 		goto failure;
 

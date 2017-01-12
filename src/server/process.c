@@ -67,11 +67,11 @@ pro_client_BCST(uint32_t id, char *msg, size_t msglen)
 	char time_buf[6];
 	time_t t = time(NULL);
 	strftime(time_buf, 6, "%H:%M", localtime(&t));
-	
+
 	char *temp = strndup(msg,msglen);
 	logs("%s <%04u:%s> %s\n", time_buf, id, u->nick, temp);
 	free(temp);
-	
+
 	broadcast(serv->users, req_server_BCST(u->nick, msg, msglen));
 	return 0;
 }
@@ -86,13 +86,13 @@ pro_client_PRVT(uint32_t id, char *nick, char *msg, size_t msglen)
 	time_t t = time(NULL);
 	strftime(time_buf, 6, "%H:%M", localtime(&t));
 	char *temp = strndup(msg,msglen);
-	
+
 	if (cl)
 		logs("%s <%04u:%s->%04u:%s> %s\n", time_buf, id, u->nick, cl->id, nick, temp);
 	else
 		logs("%s <%04u:%s->????:%s> %s\n", time_buf, id, u->nick, nick, temp);
 	free(temp);
-	
+
 	if (cl)
 		send_to(cl, req_server_PRVT(u->nick, msg, msglen));
 	else {

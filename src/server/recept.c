@@ -33,7 +33,7 @@ process_packet(data d)
 		logs("\x1B[0;1;35m" "%s" "\x1B[0m" "\n", temp);
 		free(temp);
 	}
-	
+
 	shift_data(&d, SIZEOF_NUM);
 	char *t = read_type(&d);
 	if (!t) return ERR_INVALID;

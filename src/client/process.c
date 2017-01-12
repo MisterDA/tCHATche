@@ -37,8 +37,8 @@ pro_server_OKOK(uint32_t id)
 		cl->id = id;
 		free(cl->ui->title);
 		asprintf(&cl->ui->title, "tCHATche (%s)", cl->nick);
-        tui_print_info(cl->ui, 0);
-        tui_refresh(cl->ui);
+		tui_print_info(cl->ui, 0);
+		tui_refresh(cl->ui);
 	} else { /* file transfer */
 		cl->upload->id = id;
 		send_file(cl->upload);

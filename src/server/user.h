@@ -10,10 +10,10 @@
 typedef uint32_t user_id;
 
 typedef struct {
-    user_id id;
-    char *nick;
-    char *path;
-    int pipe;
+	user_id id;
+	char *nick;
+	char *path;
+	int pipe;
 } user;
 
 user *user_create(user_id id, char *nick, char *path, int pipe);

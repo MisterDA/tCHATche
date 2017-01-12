@@ -5,7 +5,7 @@
  *   static char []
  * Array length must be > MAX_LENGTH (to detect overflow).
  * example of use:
- * 
+ *
  * data
  * req_server_BCST(char *pseudo, char *msg, size_t msglen)
  * {
@@ -16,7 +16,7 @@
  *     DO write_mem(&d, msg, msglen);
  *     END(d);
  * }
- * 
+ *
  */
 
 #include "packet.h"
