@@ -38,6 +38,7 @@ typedef struct {
 } client;
 
 extern client *cl;
+extern bool no_wait;
 
 client *client_init(void);
 void client_end(client *cl);

@@ -71,6 +71,8 @@ pro_server_BYEE(uint32_t id)
 int
 pro_server_BCST(char *nick, char *msg, size_t msglen)
 {
+	if (no_wait && strcmp(nick, cl->nick)==0)
+		return 0;
 	char *message = strndup(msg, msglen);
 	tui_add_msg(cl->ui, &(tui_msg){time(NULL), nick, message});
 	free(message);

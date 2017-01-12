@@ -20,7 +20,9 @@
 
 #define TMP "/tmp/tCHATche"
 #define LINK TMP"/server"
+
 client *cl = NULL;
+bool no_wait = false;
 
 static char *invalid_cmd = "Invalid command.";
 static char *unknown_cmd = "Unknown command.";
@@ -385,6 +387,8 @@ void input_handler(client *cl, char *buf, size_t len) {
 		tui_add_txt(cl->ui, "Use /nick to set your nickname.");
 	} else {
 		writedata(cl->server_pipe, req_client_BCST(cl->id, buf, len));
+		if (no_wait)
+			tui_add_msg(cl->ui, &(tui_msg){time(NULL), cl->nick, buf});
 	}
 	tui_clear_field(cl->ui);
 }
@@ -414,13 +418,15 @@ options_handler(int argc, char *argv[], client *cl)
 
 	opterr = 0;
 	int hflag = 0, vflag = 0, status, c;
-	while ((c = getopt(argc, argv, "f:F:hn:Os:v")) != -1) {
+	while ((c = getopt(argc, argv, "f:F:hmMn:Os:v")) != -1) {
 		switch (c) {
 		case 'f': cl->client_path = optarg; cl->client_created = false; break;
 		case 'F': cl->client_path = optarg; cl->client_created = true; break;
 		case 's': cl->server_path = optarg; break;
 		case 'O': cl->server_path = "-"; break;
 		case 'n': cl->nick = optarg; break;
+		case 'm': no_wait = false; break;
+		case 'M': no_wait = true; break;
 		case 'h': hflag = 1; break;
 		case 'v': vflag = 1; break;
 		case '?':
@@ -477,6 +483,8 @@ options_handler(int argc, char *argv[], client *cl)
 		"\t-f FIFO\tuse this pipe as input (\"-\" is not allowed)\n"
 		"\t-F FIFO\tcreate this temporary pipe and use it as input (\"-\" is not allowed)\n"
 		"\t-h\thelp\n"
+		"\t-m\twait server broadcast to show user message (default)\n"
+		"\t-M\tshow user messages when sending and ignore server response\n"
 		"\t-n NICK\tinitialize the tchat session with this nick\n"
 		"\t-O\tuse stdout as output (usefull whith redirected output)\n"
 		"\t-s FIFO\tuse this pipe as output (if the path is \"-\", similar to -O)\n"
