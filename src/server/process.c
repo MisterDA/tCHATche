@@ -20,6 +20,15 @@ pro_client_HELO(char *nick, char *path)
 		logs("Refused {nick: \"%s\"; path: \"%s\"} (invalid path)\n", nick, path);
 		return 0; /* can't send BADD because there is no pipe */
 	}
+	if (!nick) {
+		err_mes = "this nick is too long";
+		goto badd;
+	}
+	if (strlen(nick)<1) {
+		err_mes = "this nick is too short";
+		goto badd;
+	}
+	if (strcmp(nick, "SERVER")==0) goto badd_nick;
 	if (!is_valid_cred(serv->users, nick, path)) {
 		err_mes = "this nick is already used";
 		goto badd;
@@ -29,8 +38,6 @@ pro_client_HELO(char *nick, char *path)
 		err_mes = "too many people here";
 		goto badd;
 	}
-	if (strcmp(nick, "SERVER")==0) goto badd_nick;
-	if (strcmp(nick, "")==0) goto badd_nick;
 	user *u = user_create(id, nick, path, pipe);
 	arlist_add(serv->users, compare_users, u);
 	send_to(u, req_server_OKOK(id));

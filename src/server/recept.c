@@ -40,11 +40,20 @@ process_packet(data d)
 	switch (*(uint32_t *) t) {
 		case HELO:
 		{
-			char nick[NICK_MAX_LENGTH+1]; //FIXME: send BADD when nick too long
-			if (!read_str(&d, nick, NICK_MAX_LENGTH+1)) return ERR_INVALID;
+			char *nick_ = NULL;
+			char nick[NICK_MAX_LENGTH+1];
+			data d_ = d;
+			uint32_t nl = read_num(&d_);
+			if (nl>MAX_NUM) return ERR_INVALID;
+			if (nl>NICK_MAX_LENGTH) {
+				shift_data(&d, SIZEOF_NUM+nl);
+			} else {
+				if (!read_str(&d, nick, NICK_MAX_LENGTH+1)) return ERR_INVALID;
+				nick_ = nick;
+			}
 			char pipe[PIPE_MAX_LENGTH+1];
 			if (!read_str(&d, pipe, PIPE_MAX_LENGTH+1)) return ERR_INVALID;
-			return pro_client_HELO(nick, pipe);
+			return pro_client_HELO(nick_, pipe);
 		}
 		case BYEE:
 		{
