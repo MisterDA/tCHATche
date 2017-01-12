@@ -270,6 +270,10 @@ exec_command(client *cl, char *buf, size_t len)
 			exit(EXIT_SUCCESS);
 			break;
 		}
+		case CMD_DEBG: {
+			writedata(cl->server_pipe, req_client_DEBG(NULL));
+			break;
+		}
 		default:
 			tui_print_txt(cl->ui, "%s Use \"/nick\" first.", invalid_cmd);
 		}
@@ -465,10 +469,6 @@ options_handler(int argc, char *argv[], client *cl)
 	if (cl->nick)
 		cl->nick = strdup(cl->nick);
 
-	if (cl->server_path && strcmp(cl->server_path, "-")==0) {
-		fprintf(stderr, "output: stdout doesn't work for the moment\n"); //FIXME
-		exit(EXIT_FAILURE);
-	}
 
 	return;
 	if (0) usage: status = EXIT_SUCCESS;
@@ -478,7 +478,7 @@ options_handler(int argc, char *argv[], client *cl)
 		"\t-F FIFO\tcreate this temporary pipe and use it as input (\"-\" is not allowed)\n"
 		"\t-h\thelp\n"
 		"\t-n NICK\tinitialize the tchat session with this nick\n"
-		"\t-O\tuse stdout as output\n"
+		"\t-O\tuse stdout as output (usefull whith redirected output)\n"
 		"\t-s FIFO\tuse this pipe as output (if the path is \"-\", similar to -O)\n"
 		"\t-v\tversion\n"
 		"Use \"@\" outside of the parameters to use the default value.");

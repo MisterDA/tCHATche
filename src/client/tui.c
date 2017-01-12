@@ -9,10 +9,15 @@
 #define PAIR_BCST 3
 #define PAIR_PRVT 4
 
+static SCREEN *scr;
+
 void
 tui_init_curses(void)
 {
-	initscr();
+	//initscr();
+	FILE *fd = fopen("/dev/tty", "r+");
+	scr = newterm(NULL, fd, fd);
+
 	cbreak();
 	halfdelay(1);
 	noecho();
@@ -30,6 +35,7 @@ void
 tui_end_curses(void)
 {
 	endwin();
+	delscreen(scr);
 }
 
 tui *
