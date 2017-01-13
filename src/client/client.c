@@ -442,10 +442,13 @@ options_handler(int argc, char *argv[], client *cl)
 		case 'h': hflag = 1; break;
 		case 'v': vflag = 1; break;
 		case '?':
+			if (strchr("DfFns", optopt))
+				fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 			if (isprint(optopt))
 				fprintf(stderr, "Unknown option '-%c'.\n", optopt);
 			else
 				fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
+			puts("");
 		default:
 			goto failure;
 		}

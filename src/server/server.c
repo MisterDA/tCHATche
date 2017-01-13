@@ -131,12 +131,13 @@ options_handler(int argc, char *argv[])
 		case 'v': vflag = 1; break;
 		case 'd': daemonize = true; break;
 		case '?':
-			if (optopt == 'f')
+			if (strchr("fF", optopt))
 				fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 			else if (isprint(optopt))
 				fprintf(stderr, "Unknown option '-%c'.\n", optopt);
 			else
 				fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
+			puts("");
 		default:
 			goto failure;
 		}
@@ -163,6 +164,13 @@ options_handler(int argc, char *argv[])
 
 	if (++optind < argc)
 		goto failure;
+	
+	
+	if (daemonize && input_fifo && strcmp(input_fifo, "-")==0) {
+		fprintf (stderr, "Cannot daemonize while reading from stdin.\n");
+		puts("");
+		goto failure;
+	}
 
 	return;
 	if (0) usage: status = EXIT_SUCCESS;
