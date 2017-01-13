@@ -82,6 +82,7 @@ client_end(client *cl)
 	free(cl->client_path);
 	free(cl->nick);
 	arlist_destroy(cl->downloads, destroy_transfer);
+	free(cl->download_dir);
 	free(cl);
 }
 
@@ -190,6 +191,7 @@ void
 destroy_transfer(void *e)
 {
 	transfer *t = (transfer *)e;
+	if (t->fd != -1) close(t->fd);
 	free(t->filename);
 	free(t->nick);
 	free(t);
@@ -337,20 +339,27 @@ exec_command(client *cl, char *buf, size_t len)
 				break;
 			}
 			*nick_end = '\0';
+			
+			
 			char *path = nick_end + 1;
 			if (access(path, R_OK)) {
 				tui_print_txt(cl->ui, "Invalid path: %s", strerror(errno));
 				break;
 			}
-			off_t len = fsize(nick_end + 1);
+			off_t len = fsize(path);
 			if (len < 0 ) {
 				tui_add_txt(cl->ui, "Invalid file length.");
 				break;
-			} else if (len == 0) {
-				tui_add_txt(cl->ui, "Empty file.");
-				break;
+			//} else if (len == 0) {
+			//	tui_add_txt(cl->ui, "Empty file.");
+			//	break;
 			} else if ((uint32_t)len > 9999u * 256u) {
 				tui_add_txt(cl->ui, "The file is too big to be send.");
+				break;
+			}
+			int fd = open(path, O_RDONLY);
+			if (fd == -1) {
+				tui_print_txt(cl->ui, "Invalid path: %s", strerror(errno));
 				break;
 			}
 
@@ -358,7 +367,8 @@ exec_command(client *cl, char *buf, size_t len)
 			t->id = 0;
 			t->series = 0;
 			t->len = len;
-			t->filename = strdup(basename(nick_end + 1));
+			t->fd = fd;
+			t->filename = strdup(basename(path));
 			t->nick = strdup(cmd_txt_end + 1);
 			cl->upload = t;
 
@@ -415,10 +425,11 @@ options_handler(int argc, char *argv[], client *cl)
 	cl->client_path = NULL;
 	cl->client_created = false;
 	cl->nick = NULL;
+	cl->download_dir = ".";
 
 	opterr = 0;
 	int hflag = 0, vflag = 0, status, c;
-	while ((c = getopt(argc, argv, "f:F:hmMn:Os:v")) != -1) {
+	while ((c = getopt(argc, argv, "D:f:F:hmMn:Os:v")) != -1) {
 		switch (c) {
 		case 'f': cl->client_path = optarg; cl->client_created = false; break;
 		case 'F': cl->client_path = optarg; cl->client_created = true; break;
@@ -427,6 +438,7 @@ options_handler(int argc, char *argv[], client *cl)
 		case 'n': cl->nick = optarg; break;
 		case 'm': no_wait = false; break;
 		case 'M': no_wait = true; break;
+		case 'D': cl->download_dir = optarg; break;
 		case 'h': hflag = 1; break;
 		case 'v': vflag = 1; break;
 		case '?':
@@ -475,11 +487,15 @@ options_handler(int argc, char *argv[], client *cl)
 	if (cl->nick)
 		cl->nick = strdup(cl->nick);
 
+	if (cl->download_dir)
+		cl->download_dir = strdup(cl->download_dir);
+
 
 	return;
 	if (0) usage: status = EXIT_SUCCESS;
 	if (0) failure: status = EXIT_FAILURE;
 	puts("Usage: tchatche [[-s] SERV_FIFO] [[-f|F] FIFO]\n"
+		"\t-D DIR\tset downloads directory (default is the current working directory)\n"
 		"\t-f FIFO\tuse this pipe as input (\"-\" is not allowed)\n"
 		"\t-F FIFO\tcreate this temporary pipe and use it as input (\"-\" is not allowed)\n"
 		"\t-h\thelp\n"

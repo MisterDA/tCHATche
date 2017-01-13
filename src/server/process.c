@@ -165,12 +165,11 @@ pro_client_FILE_announce(uint32_t id, char *nick, uint32_t len, char *filename)
 	logs("FILE announce: {id: \"%u\"; nick: \"%s\"; len: \"%d\"; filename: \"%s\"}\n",
 		id, nick, len, filename);
 	user *sender = user_from_id(serv->users, id);
-	user *receiver = user_from_nick(serv->users, nick);
 	if (sender == NULL) return -1;
-	if (receiver == NULL || sender == receiver) {
-		send_to(sender, req_server_BADD());
-		return 0;
-	}
+	if (nick == NULL) goto badd;
+	user *receiver = user_from_nick(serv->users, nick);
+	if (receiver == NULL || sender == receiver) goto badd;
+	if (filename == NULL || !valid_filename(filename)) goto badd;
 
 	transfer *t = malloc(sizeof(*t));
 	t->id = get_available_transfer_id(serv->transfers);
@@ -181,6 +180,9 @@ pro_client_FILE_announce(uint32_t id, char *nick, uint32_t len, char *filename)
 
 	send_to(receiver, req_server_FILE_announce(t->id, len, filename, sender->nick));
 	send_to(sender, req_server_OKOK(t->id));
+	return 0;
+	badd:
+	send_to(sender, req_server_BADD());
 	return 0;
 }
 

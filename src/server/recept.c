@@ -110,13 +110,22 @@ process_packet(data d)
 			if (serie == 0) {
 				uint32_t id = read_num(&d);
 				if (id>MAX_NUM) return ERR_INVALID;
+				char *nick_ = NULL;
 				char nick[NICK_MAX_LENGTH+1];
-				if (!read_str(&d, nick, NICK_MAX_LENGTH+1)) return ERR_INVALID;
+				data d_ = d;
+				uint32_t nl = read_num(&d_);
+				if (nl>MAX_NUM) return ERR_INVALID;
+				if (nl>NICK_MAX_LENGTH) {
+					shift_data(&d, SIZEOF_NUM+nl);
+				} else {
+					if (!read_str(&d, nick, NICK_MAX_LENGTH+1)) return ERR_INVALID;
+					nick_ = nick;
+				}
 				uint32_t len = read_longnum(&d);
 				if (len>MAX_LONGNUM) return ERR_INVALID;
 				char filename[FILE_MAX_LENGTH+1];
 				if (!read_str(&d, filename, FILE_MAX_LENGTH+1)) return ERR_INVALID;
-				return pro_client_FILE_announce(id, nick, len, filename);
+				return pro_client_FILE_announce(id, nick_, len, filename);
 			} else {
 				uint32_t idtransfer = read_num(&d);
 				if (idtransfer>MAX_NUM) return ERR_INVALID;

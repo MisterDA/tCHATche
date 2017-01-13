@@ -15,7 +15,7 @@ typedef struct {
 	char *filename;
 	char *nick;
 
-	FILE *out;
+	int fd;
 } transfer;
 
 transfer *transfer_from_id(arlist *list, uint32_t id);
@@ -35,6 +35,7 @@ typedef struct {
 	char last_prvt[NICK_MAX_LENGTH+1];
 	transfer *upload;
 	arlist *downloads;
+	char *download_dir;
 } client;
 
 extern client *cl;

@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 #define STR_HELPER(x) #x
@@ -19,6 +20,9 @@ char *mktmpfifo_client(void);
 char *mktmpfifo_server(void);
 
 bool dir_is_empty(const char *path);
+
+bool valid_filename(char *filename);
+int open_new(char *dir, char *basename);
 
 void logs_start(FILE *file, const char *motd);
 void logs(const char *fmt, ...);

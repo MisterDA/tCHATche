@@ -6,25 +6,28 @@
 #include <errno.h>
 #include "client.h"
 #include "request.h"
+#include "tchatche.h"
 
 
 static void
 send_file(transfer *t)
 {
 	tui_print_txt(cl->ui, "Begin transfer of \"%s\"...", t->filename);
-	FILE *file = fopen(t->filename, "r");
-	size_t r;
+	//FILE *file = fopen(t->filename, "r");
+	ssize_t r;
 	char buf[256];
-	while ((r = fread(buf, 1, 256u, file))) {
+	while ((r = read(t->fd, buf, 256u))>0) {
 		writedata(cl->server_pipe,
 			req_client_FILE_transfer(++(t->series), t->id, mem2data(NULL, buf, r)));
+		//printf("[%u]", r); fflush(stdout);
 	}
-	if (feof(file)) {
+	if (!r) {
 		tui_add_txt(cl->ui, "The file was successfully transmitted.");
-	} else if (ferror(file)) {
-		tui_print_txt(cl->ui, "Read error while transmitting %s.", t->filename);
+	} else {
+		tui_print_txt(cl->ui, "Read error while transmitting %s. : %s (%d)",
+			t->filename, strerror(errno), t->fd);
 	}
-	fclose(file);
+	//fclose(file);
 	destroy_transfer(t);
 }
 
@@ -122,10 +125,12 @@ pro_server_FILE_announce(uint32_t intransfert, uint32_t len, char *filename,
 	t->filename = strdup(filename);
 	t->nick = nick ? strdup(nick) : NULL;
 
-	if (!access(t->filename, F_OK)) {
-		tui_add_txt(cl->ui, "Refused: file already exists.");
-	} else if (!(t->out = fopen(t->filename, "w"))) {
+	if ((t->fd = open_new(cl->download_dir, basename(filename))) == -1) {
 		tui_print_txt(cl->ui, "Refused: %s", strerror(errno));
+	} else if (len==0) {
+		tui_print_txt(cl->ui, "End of \"%s\" transfer.", t->filename);
+		destroy_transfer(t);
+		return 0;
 	} else {
 		arlist_add(cl->downloads, compare_transfers, t);
 		return 0;
@@ -139,19 +144,19 @@ pro_server_FILE_transfer(uint32_t serie, uint32_t idtransfer, data buf)
 {
 	transfer *t = transfer_from_id(cl->downloads, idtransfer);
 	if (!t) return -1;
-	if (t->out == NULL) return -1;
+	if (t->fd == -1) return -1;
 	if (t->series != serie -1) {
 		tui_print_txt(cl->ui, "Wrong series for %u, expected %u got %u.",
 			t->id, t->series + 1, serie);
 	}
-	if (fwrite(buf.ata, 1, buf.length, t->out) != buf.length) {
+	if (write(t->fd, buf.ata, buf.length) != buf.length) {
 		tui_print_txt(cl->ui, "Error while writing %u : %s", t->id, strerror(errno));
 		return -1;
 	}
-	fflush(t->out);
-	if (++(t->series) * 256 >= t->len) {
+	fsync(t->fd);
+	if (++(t->series) * 256 >= t->len) { //FIXME: danger
 		tui_print_txt(cl->ui, "End of \"%s\" transfer.", t->filename);
-		fclose(t->out);
+		//close(t->fd);
 		destroy_transfer(t);
 		arlist_remove(cl->downloads, index_of(cl->downloads, compare_transfers, t));
 	}
