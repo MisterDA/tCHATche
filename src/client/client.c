@@ -13,10 +13,12 @@
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
+#include <unistd.h>
 #include "tchatche.h"
 #include "packet_reception.h"
 #include "tui.h"
 #include "request.h"
+#include "gol.h"
 
 #define TMP "/tmp/tCHATche"
 #define LINK TMP"/server"
@@ -242,7 +244,7 @@ exec_command(client *cl, char *buf, size_t len)
 	char * cmd_txt_end;
 	{ /* extract command */
 		cmd_tok *cmdp;
-		bool was_null;
+		bool was_null = false;
 		if (buf[0] == '/') {
 			cmd_txt_end = buf;
 			cmdp = command_tok("/");
@@ -272,7 +274,7 @@ exec_command(client *cl, char *buf, size_t len)
 			if (no_wait)
 				tui_add_msg(cl->ui, &(tui_msg){time(NULL), cl->nick, msg});
 			free(msg);
-			
+
 			FILE *in = popen(buf+1, "r");
 			char *line = NULL;
 			size_t len = 0;
@@ -421,6 +423,17 @@ exec_command(client *cl, char *buf, size_t len)
 			else
 				writedata(cl->server_pipe, req_client_SHUT(cl->id, buf+1));
 			break;
+		}
+		case CMD_GOL: {
+			gol *g = gol_init(getmaxx(stdscr), getmaxy(stdscr) - 3);
+			gol_rand(g);
+			while (true) {
+				gol_iter(g);
+				gol_draw(stdscr, g);
+				refresh();
+				usleep(100);
+			}
+			gol_free(g);
 		}
 		default:
 			tui_print_txt(cl->ui, "%s Already connected.", invalid_cmd);

@@ -54,7 +54,7 @@ void client_end_tui(client *cl);
 
 typedef enum {
 	CMD_DEBG, CMD_HELP, CMD_WHO, CMD_MSG, CMD_RESP, CMD_NICK, CMD_QUIT, CMD_SEND,
-	CMD_SHUT, CMD_SHELL
+	CMD_SHUT, CMD_SHELL, CMD_GOL,
 } command;
 
 typedef struct {
