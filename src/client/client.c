@@ -502,7 +502,7 @@ options_handler(int argc, char *argv[], client *cl)
 		"\t-m\twait server broadcast to show user message (default)\n"
 		"\t-M\tshow user messages when sending and ignore server response\n"
 		"\t-n NICK\tinitialize the tchat session with this nick\n"
-		"\t-O\tuse stdout as output (usefull whith redirected output)\n"
+		"\t-O\tuse stdout as output (useful whith redirected output)\n"
 		"\t-s FIFO\tuse this pipe as output (if the path is \"-\", similar to -O)\n"
 		"\t-v\tversion\n"
 		"Use \"@\" outside of the parameters to use the default value.");
