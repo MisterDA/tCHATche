@@ -60,6 +60,8 @@ client_init(void)
 	cl->server_path = NULL;
 	cl->client_path = NULL;
 	cl->ui = NULL;
+	cl->history = arlist_create();
+	cl->current_hist = 0;
 	cl->has_id = false;
 	cl->id = MAX_NUM+1;
 	cl->nick = NULL;
@@ -73,6 +75,7 @@ void
 client_end(client *cl)
 {
 	client_end_tui(cl);
+	arlist_destroy(cl->history, free);
 	close(cl->server_pipe);
 	close(cl->client_pipe);
 	if (cl->client_created) {
@@ -376,8 +379,7 @@ exec_command(client *cl, char *buf, size_t len)
 				break;
 			}
 			*nick_end = '\0';
-			
-			
+
 			char *path = nick_end + 1;
 			if (access(path, R_OK)) {
 				tui_print_txt(cl->ui, "Invalid path: %s", strerror(errno));
@@ -428,6 +430,8 @@ exec_command(client *cl, char *buf, size_t len)
 }
 
 void input_handler(client *cl, char *buf, size_t len) {
+	arlist_push(cl->history, strdup(buf));
+	cl->current_hist = arlist_size(cl->history);
 	if (buf[0] == '/') {
 		exec_command(cl, buf + 1, len - 1);
 	} else if (!cl->has_id) {
@@ -593,20 +597,37 @@ main(int argc, char *argv[])
 		tui_refresh(ui);
 
 		/* Input handler */
-		if (ch == ERR) continue;
+		if (ch == ERR) continue;;
 		tui_print_info(ui, ch);
 		tui_refresh(ui);
 		switch (ch) {
-		case KEY_UP:
+		case KEY_PPAGE:
 			if (ui->chat_row > 0) {
 				--(ui->chat_row);
 				tui_refresh(ui);
 			}
 			break;
-		case KEY_DOWN:
+		case KEY_NPAGE:
 			if (ui->chat_row < getmaxy(ui->chat) - getmaxy(stdscr) + 2) {
 				++(ui->chat_row);
 				tui_refresh(ui);
+			}
+			break;
+		case KEY_UP:
+			if (cl->current_hist > 0) {
+				--(cl->current_hist);
+				set_field_buffer(cl->ui->fields[0], 0, arlist_get(cl->history, cl->current_hist));
+				form_driver(cl->ui->form, REQ_END_LINE);
+			}
+			break;
+		case KEY_DOWN:
+			if (cl->current_hist < arlist_size(cl->history) - 1) {
+				++(cl->current_hist);
+				set_field_buffer(cl->ui->fields[0], 0, arlist_get(cl->history, cl->current_hist));
+				form_driver(cl->ui->form, REQ_END_LINE);
+			} else if (cl->current_hist == arlist_size(cl->history) - 1) {
+				++(cl->current_hist);
+				form_driver(cl->ui->form, REQ_CLR_FIELD);
 			}
 			break;
 		case KEY_LEFT:

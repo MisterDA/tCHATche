@@ -26,6 +26,8 @@ typedef struct {
 	int server_pipe, client_pipe;
 	char *server_path, *client_path;
 	bool client_created;
+	arlist *history;
+	size_t current_hist;
 	tui *ui;
 
 	bool has_id;
