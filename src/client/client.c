@@ -28,17 +28,19 @@ static char *invalid_cmd = "Invalid command.";
 static char *unknown_cmd = "Unknown command.";
 
 static cmd_tok cmd_toks[] = {
-	{CMD_NICK, "nick",  "/nick <nick>    set your nickname"},
-	{CMD_WHO,  "who",   "/who            list users on the server"},
-	{CMD_MSG,  "msg",   "/msg <nick> ... send a private message"},
-	{CMD_MSG,  "m",     "/m <nick> ...   alias for /msg"},
-	{CMD_RESP, "r",     "/r ...          send a private message to the last correspondant"},
-	{CMD_QUIT, "quit",  "/quit           quit tCHATche client"},
-	{CMD_SHUT, "shut",  "/shut [pwd]     shut down the server"},
-	{CMD_SEND, "send",  "/send <nick> <file>  send a file"},
-	{CMD_HELP, "help",  "/help [cmd]     see more details about a specific command"},
-	{CMD_HELP, "?",     "/? [cmd]        alias for /help"},
-	{CMD_DEBG, "debug", "/debug          debug server"},
+	{CMD_NICK,  "nick",  "/nick <nick>    set your nickname"},
+	{CMD_WHO,   "who",   "/who            list users on the server"},
+	{CMD_MSG,   "msg",   "/msg <nick> ... send a private message"},
+	{CMD_MSG,   "m",     "/m <nick> ...   alias for /msg"},
+	{CMD_RESP,  "r",     "/r ...          send a private message to the last correspondant"},
+	{CMD_QUIT,  "quit",  "/quit           quit tCHATche client"},
+	{CMD_SHUT,  "shut",  "/shut [pwd]     shut down the server"},
+	{CMD_SEND,  "send",  "/send <nick> <file>  send a file"},
+	{CMD_HELP,  "help",  "/help [cmd]     see more details about a specific command"},
+	{CMD_HELP,  "?",     "/? [cmd]        alias for /help"},
+	{CMD_SHELL, "shell", "/shell ...      execute a shell command"},
+	{CMD_SHELL, "/",     "//...           alias for /shell"},
+	{CMD_DEBG,  "debug", "/debug          debug server"},
 };
 
 static off_t
@@ -236,10 +238,17 @@ exec_command(client *cl, char *buf, size_t len)
 	size_t cmd_len;
 	char * cmd_txt_end;
 	{ /* extract command */
-		cmd_txt_end = strchrnul(buf, ' ');
-		bool was_null = *cmd_txt_end == '\0';
-		if (!was_null) *cmd_txt_end = '\0';
-		cmd_tok *cmdp = command_tok(buf);
+		cmd_tok *cmdp;
+		bool was_null;
+		if (buf[0] == '/') {
+			cmd_txt_end = buf;
+			cmdp = command_tok("/");
+		} else {
+			cmd_txt_end = strchrnul(buf, ' ');
+			was_null = *cmd_txt_end == '\0';
+			if (!was_null) *cmd_txt_end = '\0';
+			cmdp = command_tok(buf);
+		}
 		if (cmdp) {
 			cmd = *cmdp;
 		} else {
@@ -251,14 +260,46 @@ exec_command(client *cl, char *buf, size_t len)
 		if (!was_null) buf[0] = ' ';
 	}
 
+	switch (cmd.cmd) {
+		case CMD_SHELL: {
+			//tui_print_txt(cl->ui, "$ %s", buf+1);
+			char *msg;
+			asprintf(&msg, "$ %s", buf+1);
+			writedata(cl->server_pipe, req_client_BCST(cl->id, msg, strlen(msg)));
+			if (no_wait)
+				tui_add_msg(cl->ui, &(tui_msg){time(NULL), cl->nick, msg});
+			free(msg);
+			
+			FILE *in = popen(buf+1, "r");
+			char *line = NULL;
+			size_t len = 0;
+			ssize_t read;
 
-	if (!cl->has_id) {
+			while ((read = getline(&line, &len, in)) != -1) {
+				//line[read-1] = '\0';
+				//tui_add_txt(cl->ui, line);
+				asprintf(&msg, "  %s", line);
+				writedata(cl->server_pipe, req_client_BCST(cl->id, msg, strlen(msg)));
+				if (no_wait)
+					tui_add_msg(cl->ui, &(tui_msg){time(NULL), cl->nick, msg});
+				free(msg);
+			}
 
-		switch (cmd.cmd) {
+			free(line);
+			fclose(in);
+			break;
+		}
 		case CMD_HELP: {
 			exec_command_HELP(cl, buf, len);
 			break;
 		}
+		default: goto next;
+	}
+	return; next:
+
+	if (!cl->has_id) {
+
+		switch (cmd.cmd) {
 		case CMD_NICK: {
 			if (cmd_len >= len) {
 				tui_add_txt(cl->ui, invalid_cmd);
@@ -285,10 +326,6 @@ exec_command(client *cl, char *buf, size_t len)
 	} else {
 
 		switch (cmd.cmd) {
-		case CMD_HELP: {
-			exec_command_HELP(cl, buf, len);
-			break;
-		}
 		case CMD_DEBG: {
 			writedata(cl->server_pipe, req_client_DEBG(NULL));
 			break;
@@ -333,7 +370,7 @@ exec_command(client *cl, char *buf, size_t len)
 		}
 		case CMD_SEND: {
 			char *nick_end = strchrnul(cmd_txt_end + 1, ' ');
-			size_t nick_len = nick_end - cmd_txt_end;
+			size_t nick_len = nick_end - cmd_txt_end-1 + 1;
 			if (*nick_end == '\0' || nick_len + cmd_len >= len) {
 				tui_add_txt(cl->ui, invalid_cmd);
 				break;
